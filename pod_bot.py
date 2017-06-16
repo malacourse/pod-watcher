@@ -12,6 +12,13 @@ import traceback
 import websocket
 import thread
 
+from flask import Flask
+application = Flask(__name__)
+
+@application.route("/")
+def hello():
+    return "Hello World!"
+
 
 class PodBot(object):
 
@@ -80,6 +87,6 @@ class PodBot(object):
             logging.critical("Terminating due to unexpected error: %s", sys.exc_info()[0])
             logging.critical("%s", traceback.format_exc())
 
-
 if __name__ == "__main__":
-    PodBot().main()
+    application.run()
+
