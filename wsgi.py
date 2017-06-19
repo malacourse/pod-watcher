@@ -4,7 +4,8 @@ from flask import Flask
 application = Flask(__name__)
 
 @application.route("/")
-def hello():
+def status_page():
+    print ("Start status page")
     bot = PodBot()
     bot.about()
     return bot.about()

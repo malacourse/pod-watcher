@@ -24,7 +24,7 @@ class PodBot(object):
         print error
 
     def on_close(self, ws):
-        print "### closed ###"
+        print ("### closed ###")
 
     def on_open(self, ws):
         def run(*args):
@@ -33,12 +33,11 @@ class PodBot(object):
                 ws.send("Hello %d" % i)
             time.sleep(1)
             ws.close()
-            print "thread terminating..."
+            print ("thread terminating...")
         thread.start_new_thread(run, ())
 
     def about(self):
-       print "pod bot status module"
-       print "2"
+       print ("pod bot status module")
     
     def main2(self):
         try:
