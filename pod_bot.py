@@ -18,10 +18,10 @@ class PodBot(object):
         self.logger = logging.getLogger(__name__)
 
     def on_message(self, ws, message):
-        print message
+        print (message)
 
     def on_error(self, ws, error):
-        print error
+        print (error)
 
     def on_close(self, ws):
         print ("### closed ###")
@@ -71,7 +71,7 @@ class PodBot(object):
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             while True:
                 result = ws.recv()
-                print"Received '%s'" % result
+                print ("Received '%s'" % result)
                 #parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
 
