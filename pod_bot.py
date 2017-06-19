@@ -68,7 +68,7 @@ class PodBot(object):
                 parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
                 nTries = nTries + 1
-                time.sleap(100)           
+                time.sleep(100)           
 
             return parsed_json
 
