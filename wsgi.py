@@ -3,7 +3,7 @@ application = Flask(__name__)
 
 @application.route("/")
 def hello():
-    return "This is the Pod watcher server!"
+    return "Hello World!"
 
 if __name__ == "__main__":
-    application.run(port=8070)
+    application.run()
