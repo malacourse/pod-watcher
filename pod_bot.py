@@ -60,9 +60,9 @@ class PodBot(object):
             #Create a socket and listen for tickles
             self.logger.info("Calling websocket with:" + url)
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
-            while True:
-                result = ws.recv()
-                self.logger.debug("Received '%s'" % result)
+            
+            result = ws.recv()
+            self.logger.info("Received '%s'" % result)
                 #parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
            
