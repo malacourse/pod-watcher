@@ -62,7 +62,7 @@ class PodBot(object):
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             
             nTries = 0
-            while nTries > 100:
+            while nTries < 100:
                 result = ws.recv()
                 self.logger.info("Received '%s'" % result)
                 parsed_json = json.loads(result)
