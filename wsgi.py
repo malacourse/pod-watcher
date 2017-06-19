@@ -14,7 +14,7 @@ def status_page():
     try:
        status = bot.get_status()
     except:
-       status = "Error:" + sys.exc_info()[0]
+       status = "Error:" + str(sys.exc_info()[0])
     return retStr + status
 
 @application.route("/config")
