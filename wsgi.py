@@ -6,4 +6,4 @@ def hello():
     return "This is the Pod watcher server!"
 
 if __name__ == "__main__":
-    application.run()
+    application.run(port=8070)
