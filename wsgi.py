@@ -4,7 +4,7 @@ application = Flask(__name__)
 
 @application.route("/")
 def status_page():
-    def retStr =  "<h>Pod Status Page</h>"
+    retStr =  "<h>Pod Status Page</h>"
     retStr +=  "<h2><a href='/config'>Configuration</a></h2>"
     bot = PodBot()
     bot.about()
