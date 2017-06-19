@@ -17,6 +17,7 @@ class PodBot(object):
     _osToken = "TOKEN-A"
 
     def __init__(self):
+        print("Bot INIT START")
         self.logger = logging.getLogger(__name__)
         if "OPENSHIFT_URL" in os.environ:
            _osURL = os.environ["OPENSHIFT_URL"]
@@ -36,6 +37,7 @@ class PodBot(object):
        print ("pod bot status module")
     
     def get_status():
+        print("get status start")
         try:
             # Set up logging
             log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
@@ -64,6 +66,7 @@ class PodBot(object):
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
             #Create a socket and listen for tickles
+            print("Calling websocket with:" + url)
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             while True:
                 result = ws.recv()

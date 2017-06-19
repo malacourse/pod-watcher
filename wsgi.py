@@ -2,6 +2,7 @@ from pod_bot import PodBot
 from flask import Flask
 import os
 import sys
+import traceback
 
 application = Flask(__name__)
 
@@ -14,6 +15,7 @@ def status_page():
     try:
        status = bot.get_status()
     except:
+       print(traceback.format_exc())
        status = "Error:" + str(sys.exc_info()[0])
     return retStr + status
 
