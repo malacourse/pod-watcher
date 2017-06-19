@@ -36,7 +36,7 @@ class PodBot(object):
     def about(self):
        print ("pod bot status module")
     
-    def get_status():
+    def get_status(self):
         print("get status start")
         try:
             # Set up logging
