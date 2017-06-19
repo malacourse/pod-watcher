@@ -44,15 +44,15 @@ class PodBot(object):
             log_level = logging.INFO
             #log_level = logging.DEBUG
 
-            if "GITBASHTTY" in os.environ:
+            #if "GITBASHTTY" in os.environ:
                 logging.basicConfig(format=log_fmt, level=log_level)
-            else:
-                if sys.stdout.isatty():
+            #else:
+                #if sys.stdout.isatty():
                     # Connected to a real terminal - log to stdout
-                    logging.basicConfig(format=log_fmt, level=log_level)
-                else:
+                #    logging.basicConfig(format=log_fmt, level=log_level)
+                #else:
                     # Background mode - log to file
-                    logging.basicConfig(format=log_fmt, level=log_level, filename='test.log')
+                    #logging.basicConfig(format=log_fmt, level=log_level, filename='test.log')
 
             # Banner
             self.logger.info("==========================================================")
@@ -60,7 +60,7 @@ class PodBot(object):
 
             #sslopt={"cert_reqs": ssl.CERT_NONE},
             #websocket.enableTrace(True)
-            url="wss://" + osURL + "/pods?watch=true&access_token=" + osToken
+            url="wss://" + _osURL + "/pods?watch=true&access_token=" + _osToken
             #ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
             #ws.on_open = self.on_open
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
