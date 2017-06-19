@@ -1,3 +1,5 @@
+import pod_bot
+
 from flask import Flask
 application = Flask(__name__)
 

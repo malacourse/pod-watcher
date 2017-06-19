@@ -38,6 +38,7 @@ class PodBot(object):
 
     def about(self):
        print "pod bot status module"
+       print "2"
     
     def main2(self):
         try:
