@@ -13,16 +13,16 @@ import websocket
 
 class PodBot(object):
 
-    _osURL = "ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox"
-    _osToken = "TOKEN-A"
+    osURL = "ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox"
+    osToken = "TOKEN-A"
 
     def __init__(self):
         print("Bot INIT START")
         self.logger = logging.getLogger(__name__)
         if "OPENSHIFT_URL" in os.environ:
-           _osURL = os.environ["OPENSHIFT_URL"]
+           self.osURL = os.environ["OPENSHIFT_URL"]
         if "OPENSHIFT_TOKEN" in os.environ:
-           _osToken = os.environ["OPENSHIFT_TOKEN"]
+           self.osToken = os.environ["OPENSHIFT_TOKEN"]
 
     def on_message(self, ws, message):
         print (message)
@@ -37,7 +37,6 @@ class PodBot(object):
        print ("pod bot status module")
     
     def get_status(self):
-        print("get status start")
         result = "Error"
         try:
             # Set up logging
@@ -52,13 +51,13 @@ class PodBot(object):
 
             #sslopt={"cert_reqs": ssl.CERT_NONE},
             #websocket.enableTrace(True)
-            url="wss://" + _osURL + "/pods?watch=true&access_token=" + _osToken
+            url="wss://" + self.osURL + "/pods?watch=true&access_token=" + self.osToken
             #ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
             #ws.on_open = self.on_open
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
             #Create a socket and listen for tickles
-            print("Calling websocket with:" + url)
+            self.log.info("Calling websocket with:" + url)
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             while True:
                 result = ws.recv()
