@@ -38,21 +38,13 @@ class PodBot(object):
     
     def get_status(self):
         print("get status start")
+        result = "Error"
         try:
             # Set up logging
             log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
             log_level = logging.INFO
-            #log_level = logging.DEBUG
 
-            #if "GITBASHTTY" in os.environ:
-                logging.basicConfig(format=log_fmt, level=log_level)
-            #else:
-                #if sys.stdout.isatty():
-                    # Connected to a real terminal - log to stdout
-                #    logging.basicConfig(format=log_fmt, level=log_level)
-                #else:
-                    # Background mode - log to file
-                    #logging.basicConfig(format=log_fmt, level=log_level, filename='test.log')
+            logging.basicConfig(format=log_fmt, level=log_level)
 
             # Banner
             self.logger.info("==========================================================")
