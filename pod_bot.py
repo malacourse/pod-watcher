@@ -61,11 +61,15 @@ class PodBot(object):
             self.logger.info("Calling websocket with:" + url)
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             
-            result = ws.recv()
-            self.logger.info("Received '%s'" % result)
-            parsed_json = json.loads(result)
+            nTries = 0
+            while nTries > 100:
+                result = ws.recv()
+                self.logger.info("Received '%s'" % result)
+                parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
-           
+                nTries = nTries + 1
+                time.sleap(100)           
+
             return parsed_json
 
         except KeyboardInterrupt:
