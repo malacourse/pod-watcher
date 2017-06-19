@@ -10,7 +10,6 @@ import json
 import ssl
 import traceback
 import websocket
-import thread
 
 class PodBot(object):
 
@@ -25,16 +24,6 @@ class PodBot(object):
 
     def on_close(self, ws):
         print ("### closed ###")
-
-    def on_open(self, ws):
-        def run(*args):
-            for i in range(3):
-                time.sleep(1)
-                ws.send("Hello %d" % i)
-            time.sleep(1)
-            ws.close()
-            print ("thread terminating...")
-        thread.start_new_thread(run, ())
 
     def about(self):
        print ("pod bot status module")
