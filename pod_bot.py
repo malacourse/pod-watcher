@@ -63,10 +63,10 @@ class PodBot(object):
             
             result = ws.recv()
             self.logger.info("Received '%s'" % result)
-                #parsed_json = json.loads(result)
+            parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
            
-            return result
+            return parsed_json
 
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
