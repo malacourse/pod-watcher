@@ -11,13 +11,14 @@ def status_page():
     retStr =  "<h1>Pod Status Page</h1>"
     retStr +=  "<h2><a href='/config'>Configuration</a></h2>"
     bot = PodBot()
-    status = "<p>No Status</p>"
+    botStatus = "<p>No Status</p>"
     try:
-       status = bot.get_status()
+       botStatus = bot.get_status()
     except:
        print(traceback.format_exc())
        status = "Error:" + str(sys.exc_info()[0])
-    return retStr + status
+    retStr = retStr + str(botStatus)
+    return retStr
 
 @application.route("/config")
 def config_page():
