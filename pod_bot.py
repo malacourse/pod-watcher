@@ -13,8 +13,15 @@ import websocket
 
 class PodBot(object):
 
+    _osURL = "ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox"
+    _osToken = "TOKEN-A"
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        if "OPENSHIFT_URL" in os.environ:
+           _osURL = os.environ["OPENSHIFT_URL"]
+        if "OPENSHIFT_TOKEN" in os.environ:
+           _osToken = os.environ["OPENSHIFT_TOKEN"]
 
     def on_message(self, ws, message):
         print (message)
@@ -28,7 +35,7 @@ class PodBot(object):
     def about(self):
        print ("pod bot status module")
     
-    def main2(self):
+    def get_status():
         try:
             # Set up logging
             log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
@@ -51,7 +58,7 @@ class PodBot(object):
 
             #sslopt={"cert_reqs": ssl.CERT_NONE},
             #websocket.enableTrace(True)
-            url="wss://ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox/pods?watch=true&access_token=ADD-CONSOLE-TOKEN-HERE"
+            url="wss://" + osURL + "/pods?watch=true&access_token=" + osToken
             #ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
             #ws.on_open = self.on_open
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
@@ -63,7 +70,8 @@ class PodBot(object):
                 print ("Received '%s'" % result)
                 #parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
-
+           
+            return result
 
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
