@@ -13,11 +13,12 @@ import websocket
 
 class PodBot(object):
 
-    osURL = "ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox"
-    osToken = "TOKEN-A"
 
     def __init__(self):
         print("Bot INIT START")
+        self.osURL = "ose-dev-cnsl.divbiz.net:8443/api/v1/namespaces/redhat-sandbox"
+        self.osToken = "TOKEN-A"
+
         self.logger = logging.getLogger(__name__)
         if "OPENSHIFT_URL" in os.environ:
            self.osURL = os.environ["OPENSHIFT_URL"]
@@ -57,11 +58,11 @@ class PodBot(object):
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
             #Create a socket and listen for tickles
-            self.log.info("Calling websocket with:" + url)
+            self.logger.info("Calling websocket with:" + url)
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             while True:
                 result = ws.recv()
-                print ("Received '%s'" % result)
+                self.logger.debug("Received '%s'" % result)
                 #parsed_json = json.loads(result)
                 #stocket_type = parsed_json['type']
            
