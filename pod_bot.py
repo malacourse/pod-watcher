@@ -12,7 +12,6 @@ import ssl
 import traceback
 import websocket
 from pod_status import PodStatus
-from threading import thread
 
 class PodBot(object):
 
@@ -58,7 +57,7 @@ class PodBot(object):
 
             self.logging.info("thread terminating...")
         args = [url]
-        thread.start_new_thread(run, tuple(args))
+        _thread.start_new_thread(run, tuple(args))
 
     def get_status(self):
         result = "Error"
