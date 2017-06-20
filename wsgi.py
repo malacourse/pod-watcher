@@ -10,13 +10,12 @@ application = Flask(__name__)
 def status_page():
     retStr =  "<h1>Pod Status Page</h1>"
     retStr +=  "<h2><a href='/config'>Configuration</a></h2>"
-    bot = PodBot()
-    botStatus = "<p>No Status</p>"
-    try:
-       botStatus = bot.get_status()
-    except:
-       print(traceback.format_exc())
-       status = "Error:" + str(sys.exc_info()[0])
+    botStatus = "<p>No Started</p>"
+    #try:
+    #   botStatus = bot.get_status()
+    #except:
+    #   print(traceback.format_exc())
+    #   status = "Error:" + str(sys.exc_info()[0])
     retStr = retStr + str(botStatus)
     return retStr
 
@@ -26,4 +25,11 @@ def config_page():
     return retStr
 
 if __name__ == "__main__":
+    self.bot = PodBot()
+    try:
+       botStatus = self.bot.get_status()
+    except:
+       print(traceback.format_exc())
+       status = "Error:" + str(sys.exc_info()[0])
+
     application.run()
