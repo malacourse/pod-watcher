@@ -55,7 +55,7 @@ class PodBot(object):
                 nTries = nTries + 1
                 time.sleep(10)
 
-            print "thread terminating..."
+            print ("thread terminating...")
         args = [url]
         thread.start_new_thread(run, tuple(args))
 
