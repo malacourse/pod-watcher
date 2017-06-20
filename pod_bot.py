@@ -86,7 +86,7 @@ class PodBot(object):
             self.runSocket(url)
 
             nTries = 0
-            while nTries < 100000:
+            #while nTries < 100000:
             #    result = ws.recv()
             #    self.logger.debug("Received '%s'" % result)
             #    parsed_json = json.loads(result)
@@ -94,8 +94,8 @@ class PodBot(object):
             #    #self.logger.warn("JSON: " + str(parsed_json))
             #    #stocket_type = parsed_json['type']
             #    nTries = nTries + 1
-                self.logger.info("hello:" + str(self.podStatus))
-                time.sleep(10)           
+            #    self.logger.info("hello:" + str(self.podStatus))
+            #    time.sleep(10)           
 
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
