@@ -28,10 +28,9 @@ def config_page():
 
 @application.route("/init")
 def init_page():
-    bot = PodBot()
     retStr = "Config Status:"
     try:
-       botStatus = bot.get_status()
+       botStatus = PodBot().start()
        retStr = retStr + "Success"
     except:
        print(traceback.format_exc())
