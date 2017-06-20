@@ -86,7 +86,7 @@ class PodBot(object):
             self.runSocket(url)
 
             nTries = 0
-            while nTries < 100000:
+            while nTries < 1000:
             #    result = ws.recv()
             #    self.logger.debug("Received '%s'" % result)
             #    parsed_json = json.loads(result)
@@ -125,7 +125,6 @@ class PodBot(object):
             print("contStatus:" + str(contStatus[0]))
             podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
             self.podStatus[contStatus[0]["name"]] = podstatus
-
 
 
 

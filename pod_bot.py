@@ -126,5 +126,5 @@ class PodBot(object):
             podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
             self.podStatus[contStatus[0]["name"]] = podstatus
 
-    def start()
+    def start():
         bot = PodBot().get_status()
