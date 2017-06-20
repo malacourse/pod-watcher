@@ -1,5 +1,5 @@
 import os
-from pod_bot import PodBot
+import pod_bot
 
 print("Config Starting")
 workers = int(os.environ.get('GUNICORN_PROCESSES', '3'))
