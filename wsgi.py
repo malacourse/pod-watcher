@@ -3,9 +3,9 @@ from flask import Flask
 import os
 import sys
 import traceback
-from pod_monitor import PodMonitor
 
 application = Flask(__name__)
+bot = PodBot()
 
 @application.route("/")
 def status_page():

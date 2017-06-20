@@ -27,6 +27,7 @@ class PodBot(object):
         if "OPENSHIFT_TOKEN" in os.environ:
            self.osToken = os.environ["OPENSHIFT_TOKEN"]
         self.podStatus = {}
+        self.get_status()
 
     def on_message(self, ws, message):
         print (message)
