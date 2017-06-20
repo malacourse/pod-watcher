@@ -7,7 +7,7 @@ import sys
 import os
 import logging
 import json
-import thread
+import _thread
 import ssl
 import traceback
 import websocket
