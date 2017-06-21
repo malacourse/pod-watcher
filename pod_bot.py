@@ -146,5 +146,5 @@ class PodBot(object):
                 ps["state"] = contStatus[0]["state"]
                 ps["restartCount"] = contStatus[0]["restartCount"]
                 self.podStatus[contStatus[0]["name"]] = ps
-        else
+        else:
             self.logger.warn("Status is not type Dictionary!")
