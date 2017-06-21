@@ -8,7 +8,7 @@ import os
 import pickle
 import logging
 import json
-import _thread
+import _thread as thread
 import ssl
 import traceback
 import websocket
@@ -30,9 +30,10 @@ class PodBot(object):
         self.podStatus = {}
 
     def on_message(self, ws, message):
-        self.logger.info (message)
+        self.logger.debug(message)
         parsed_json = json.loads(message)
         self.parse_json(parsed_json)
+        self.save_status()
 
     def on_error(self, ws, error):
         self.logger.info (error)
@@ -61,7 +62,7 @@ class PodBot(object):
 
             self.logging.info("thread terminating...")
         args = [url]
-        _thread.start_new_thread(run, tuple(args))
+        thread.start_new_thread(run, tuple(args))
 
     def runSocket(self,url):
         def run(url):
@@ -72,7 +73,7 @@ class PodBot(object):
                 while True:
                     self.logging.info("thread terminating...")
         args = [url]
-        _thread.start_new_thread(run, tuple(args))
+        thread.start_new_thread(run, tuple(args))
     
     def save_status(self):
         # save to file:
