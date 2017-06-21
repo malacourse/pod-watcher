@@ -22,7 +22,7 @@ def status_page():
        items = PodStatusReader().get_status()
        if type(items) == dict:
            status = "<table><tr><td>Name</td><td>Restart Count</td><td>State</td></tr>"
-           for key, ps in items.iteritems():
+           for key, ps in items.items():
                #status += "<tr>"
                status += "<tr>" if ps["restartCount"] < threshold else "<tr style='color:#ff0000;'>"
                status += "<td>" +str(key) + "</td><td>" + str(ps["restartCount"]) + "</td><td>" + str(ps["state"]) + "</td>" 
