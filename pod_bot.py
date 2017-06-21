@@ -17,7 +17,6 @@ class PodBot(object):
 
 
     def __init__(self):
-        print("Bot INIT START")
         self.osURL = "localhost:8443/api/v1/namespaces/test"
         self.osToken = "yCEDk4pYRumrCi9hovUdDtcRN_XmkAWv3HGHFClbQmg"
 
@@ -30,16 +29,16 @@ class PodBot(object):
         self.get_status()
 
     def on_message(self, ws, message):
-        print (message)
+        self.logger.info (message)
 
     def on_error(self, ws, error):
-        print (error)
+        self.logger.info (error)
 
     def on_close(self, ws):
-        print ("### closed ###")
+        self.logger.info ("### closed ###")
 
     def about(self):
-       print ("pod bot status module")
+       self.logger.info ("pod bot status module")
       
     def runSocket(self,url):
         def run(url):
@@ -48,7 +47,7 @@ class PodBot(object):
             nTries = 0
             while nTries < 100000:
                 result = ws.recv()
-                self.logger.info("Received '%s'" % result)
+                self.logger.debug("Received '%s'" % result)
                 parsed_json = json.loads(result)
                 self.parse_json(parsed_json)
                 #self.logger.warn("JSON: " + str(parsed_json))
@@ -65,7 +64,7 @@ class PodBot(object):
         try:
             # Set up logging
             log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
-            log_level = logging.WARN
+            log_level = logging.INFO
 
             logging.basicConfig(format=log_fmt, level=log_level)
 
@@ -105,25 +104,25 @@ class PodBot(object):
             logging.critical("%s", traceback.format_exc())
 
     def parse_json(self, json):
-        print("json:" + str(json.__class__))
+        self.logger.info("json:" + str(json.__class__))
         status = json["object"]["status"]
         meta = json["object"]["metadata"]
         spec = json["object"]["spec"]
-        #print("status:" + str(status))
-        #print("meta:" + str(meta))
-        #print("spec:" + str(spec))
+        #self.logger.info("status:" + str(status))
+        #self.logger.info("meta:" + str(meta))
+        #self.logger.info("spec:" + str(spec))
         contStatus = status["containerStatuses"]
         conditions = status["conditions"]
-        #print("cs:" + str(contStatus))
-        #print("cond:" + str(conditions))
+        #self.logger.info("cs:" + str(contStatus))
+        #self.logger.info("cond:" + str(conditions))
         #for key, val in contStatus[0].iteritems():
-        #    print("key:" + str(key))
-        #    print("items:" + str(val.__class__))
-        print("name:" + contStatus[0]["name"])
-        print("image:" + contStatus[0]["image"])
+        #    self.logger.info("key:" + str(key))
+        #    self.logger.info("items:" + str(val.__class__))
+        self.logger.info("name:" + contStatus[0]["name"])
+        self.logger.info("image:" + contStatus[0]["image"])
         if "ose-" not in contStatus[0]["image"]:
-            print("Not OSI Image")
-            print("contStatus:" + str(contStatus[0]))
+            self.logger.info("Not OSI Image")
+            self.logger.info("contStatus:" + str(contStatus[0]))
             podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
             self.podStatus[contStatus[0]["name"]] = podstatus
 
