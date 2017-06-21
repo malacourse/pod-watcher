@@ -88,11 +88,12 @@ class PodBot(object):
             #ws.on_open = self.on_open
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
-            #Create a socket and listen for tickles
-            self.logger.info("Calling websocket with:" + url)
+
+            self.runSocket(url)
+            while True:
+                self.logger.debug("Running forever!")
             #ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             
-            self.runSocket(url)
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
         except:
