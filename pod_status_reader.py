@@ -19,5 +19,6 @@ class PodStatusReader():
                 data = pickle.load(f)
             except ValueError:
                 data = {}
+        self.logger.info("Data:" + str(data))
         return data
 
