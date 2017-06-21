@@ -78,7 +78,7 @@ class PodBot(object):
     def save_status(self):
         # save to file:
         with open(self.filePath, 'w') as f:
-            pickle.dump(self.podStatus, f,pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.podStatus, f)
             f.close()
 
 
