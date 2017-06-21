@@ -77,7 +77,7 @@ class PodBot(object):
     
     def save_status(self):
         # save to file:
-        with open(self.filePath, 'w') as f:
+        with open(self.filePath, 'wb') as f:
             pickle.dump(self.podStatus, f)
             f.close()
 
