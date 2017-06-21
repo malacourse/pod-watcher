@@ -5,28 +5,29 @@ import time
 import re
 import sys
 import os
+import pickle
 import logging
 import json
 import _thread
 import ssl
 import traceback
 import websocket
-from pod_status import PodStatus
 
 class PodBot(object):
 
-
     def __init__(self):
         self.osURL = "localhost:8443/api/v1/namespaces/test"
-        self.osToken = "yCEDk4pYRumrCi9hovUdDtcRN_XmkAWv3HGHFClbQmg"
-
+        self.osToken = "NDSXs-XZrzQAnY_6V5RuQ8nluFc4ayWmZ4v4I_xo8JA"
+        self.filePath = "/var/lib/podstatus/pod_status.txt"
         self.logger = logging.getLogger(__name__)
+        self.logger.info("START")
         if "OPENSHIFT_URL" in os.environ:
            self.osURL = os.environ["OPENSHIFT_URL"]
         if "OPENSHIFT_TOKEN" in os.environ:
            self.osToken = os.environ["OPENSHIFT_TOKEN"]
+        if "STATUSFILE" in os.environ:
+           sefl.filePath = os.environ["STATUSFILE"]
         self.podStatus = {}
-        self.get_status()
 
     def on_message(self, ws, message):
         self.logger.info (message)
@@ -53,13 +54,21 @@ class PodBot(object):
                 #self.logger.warn("JSON: " + str(parsed_json))
                 #stocket_type = parsed_json['type']
                 nTries = nTries + 1
-                time.sleep(10)
+                self.save_status()
+                time.sleep(1)
 
             self.logging.info("thread terminating...")
         args = [url]
         _thread.start_new_thread(run, tuple(args))
+    
+    def save_status(self):
+        # save to file:
+        with open(self.filePath, 'w') as f:
+            pickle.dump(self.podStatus, f,pickle.HIGHEST_PROTOCOL)
+            f.close()
 
-    def get_status(self):
+
+    def start(self):
         result = "Error"
         try:
             # Set up logging
@@ -84,24 +93,21 @@ class PodBot(object):
             #ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             
             self.runSocket(url)
-
-            nTries = 0
-            #while nTries < 100000:
-            #    result = ws.recv()
-            #    self.logger.debug("Received '%s'" % result)
-            #    parsed_json = json.loads(result)
-            #    self.parse_json(parsed_json)
-            #    #self.logger.warn("JSON: " + str(parsed_json))
-            #    #stocket_type = parsed_json['type']
-            #    nTries = nTries + 1
-            #    self.logger.info("hello:" + str(self.podStatus))
-            #    time.sleep(10)           
-
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
         except:
             logging.critical("Terminating due to unexpected error: %s", sys.exc_info()[0])
             logging.critical("%s", traceback.format_exc())
+ 
+    def get_status(self):
+        # load from file:
+        with open('/tmp/pod_status.txt', 'r') as f:
+            try:
+                data = pickle.load(f)
+            except ValueError:
+                data = {}
+        return data
+
 
     def parse_json(self, json):
         self.logger.info("json:" + str(json.__class__))
@@ -111,20 +117,17 @@ class PodBot(object):
         #self.logger.info("status:" + str(status))
         #self.logger.info("meta:" + str(meta))
         #self.logger.info("spec:" + str(spec))
-        contStatus = status["containerStatuses"]
-        conditions = status["conditions"]
-        #self.logger.info("cs:" + str(contStatus))
-        #self.logger.info("cond:" + str(conditions))
-        #for key, val in contStatus[0].iteritems():
-        #    self.logger.info("key:" + str(key))
-        #    self.logger.info("items:" + str(val.__class__))
-        self.logger.info("name:" + contStatus[0]["name"])
-        self.logger.info("image:" + contStatus[0]["image"])
-        if "ose-" not in contStatus[0]["image"]:
-            self.logger.info("Not OSI Image")
-            self.logger.info("contStatus:" + str(contStatus[0]))
-            podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
-            self.podStatus[contStatus[0]["name"]] = podstatus
+        if status.has_key("containerStatuses"):
+            contStatus = status["containerStatuses"]
+            #conditions = status["conditions"]
+            self.logger.info("name:" + contStatus[0]["name"])
+            self.logger.info("image:" + contStatus[0]["image"])
+            if "ose-" not in contStatus[0]["image"]:
+                self.logger.info("Not OSI Image")
+                self.logger.info("contStatus:" + str(contStatus[0]))
+                #podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
+                ps = {}
+                ps["state"] = contStatus[0]["state"]
+                ps["restartCount"] = contStatus[0]["restartCount"]
+                self.podStatus[contStatus[0]["name"]] = ps
 
-    def start():
-        bot = PodBot().get_status()
