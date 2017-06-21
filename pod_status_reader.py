@@ -14,7 +14,7 @@ class PodStatusReader():
 
     def get_status(self):
         # load from file:
-        with open(self.filePath, 'r') as f:
+        with open(self.filePath, 'rb') as f:
             try:
                 data = pickle.load(f)
             except ValueError:
