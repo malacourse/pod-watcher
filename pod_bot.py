@@ -17,7 +17,7 @@ class PodBot(object):
 
     def __init__(self):
         self.osURL = "localhost:8443/api/v1/namespaces/test"
-        self.osToken = "NDSXs-XZrzQAnY_6V5RuQ8nluFc4ayWmZ4v4I_xo8JA"
+        self.osToken = "N5rVSBFL82XR8P_051PYjTQoN9sKYH343D74qNpveoQ"
         self.filePath = "/var/lib/podstatus/pod_status.txt"
         self.logger = logging.getLogger(__name__)
         self.logger.info("START")
@@ -31,6 +31,8 @@ class PodBot(object):
 
     def on_message(self, ws, message):
         self.logger.info (message)
+        parsed_json = json.loads(message)
+        self.parse_json(parsed_json)
 
     def on_error(self, ws, error):
         self.logger.info (error)
@@ -41,7 +43,7 @@ class PodBot(object):
     def about(self):
        self.logger.info ("pod bot status module")
       
-    def runSocket(self,url):
+    def runSocket2(self,url):
         def run(url):
             ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
 
@@ -58,6 +60,17 @@ class PodBot(object):
                 time.sleep(1)
 
             self.logging.info("thread terminating...")
+        args = [url]
+        _thread.start_new_thread(run, tuple(args))
+
+    def runSocket(self,url):
+        def run(url):
+                time.sleep(1)
+                ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
+                #ws.on_open = self.on_open
+                ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+                while True:
+                    self.logging.info("thread terminating...")
         args = [url]
         _thread.start_new_thread(run, tuple(args))
     
@@ -90,8 +103,8 @@ class PodBot(object):
 
 
             self.runSocket(url)
-            while True:
-                self.logger.debug("Running forever!")
+            #while True:
+            #    self.logger.debug("Running forever!")
             #ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
             
         except KeyboardInterrupt:
@@ -112,13 +125,15 @@ class PodBot(object):
 
     def parse_json(self, json):
         self.logger.info("json:" + str(json.__class__))
+        
         status = json["object"]["status"]
-        meta = json["object"]["metadata"]
-        spec = json["object"]["spec"]
+        #meta = json["object"]["metadata"]
+        #spec = json["object"]["spec"]
         #self.logger.info("status:" + str(status))
         #self.logger.info("meta:" + str(meta))
         #self.logger.info("spec:" + str(spec))
-        if status.has_key("containerStatuses"):
+        self.logger.error("STATUS:" + str(status.__class__))
+        if type(status) is dict:
             contStatus = status["containerStatuses"]
             #conditions = status["conditions"]
             self.logger.info("name:" + contStatus[0]["name"])
@@ -131,4 +146,5 @@ class PodBot(object):
                 ps["state"] = contStatus[0]["state"]
                 ps["restartCount"] = contStatus[0]["restartCount"]
                 self.podStatus[contStatus[0]["name"]] = ps
-
+        else
+            self.logger.warn("Status is not type Dictionary!")
