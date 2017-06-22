@@ -8,16 +8,17 @@ import os
 import pickle
 import logging
 import json
-import _thread as thread
+import threading as thread
 import ssl
 import traceback
 import websocket
+import urllib
 
 class PodBot(object):
 
     def __init__(self):
         self.osURL = "localhost:8443/api/v1/namespaces/test"
-        self.osToken = "N5rVSBFL82XR8P_051PYjTQoN9sKYH343D74qNpveoQ"
+        self.osToken = "QqFVOYew09aAbfnUhlzq2QoyVmYG1OBKkxp_3yUIOgs"
         self.filePath = "/var/lib/podstatus/pod_status.txt"
         self.logger = logging.getLogger(__name__)
         self.logger.info("START")
@@ -36,44 +37,31 @@ class PodBot(object):
         self.save_status()
 
     def on_error(self, ws, error):
-        self.logger.info (error)
+        self.logger.error (error)
 
     def on_close(self, ws):
-        self.logger.info ("### closed ###")
+        self.logger.info ("### closed:" + str(self.myThread.is_alive()))
+        os._exit(2)
 
     def about(self):
        self.logger.info ("pod bot status module")
       
-    def runSocket2(self,url):
-        def run(url):
-            ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
-
-            nTries = 0
-            while nTries < 100000:
-                result = ws.recv()
-                self.logger.debug("Received '%s'" % result)
-                parsed_json = json.loads(result)
-                self.parse_json(parsed_json)
-                #self.logger.warn("JSON: " + str(parsed_json))
-                #stocket_type = parsed_json['type']
-                nTries = nTries + 1
-                self.save_status()
-                time.sleep(1)
-
-            self.logging.info("thread terminating...")
-        args = [url]
-        thread.start_new_thread(run, tuple(args))
-
     def runSocket(self,url):
         def run(url):
                 time.sleep(1)
-                ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
+                #url = urllib.pathname2url(url)
+                self.logger.info("URL" + url)
+                self.ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close=self.on_close)
                 #ws.on_open = self.on_open
-                ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-                while True:
-                    self.logging.info("thread terminating...")
+                self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+                self.logger.warn("thread terminating...")
+                
         args = [url]
-        thread.start_new_thread(run, tuple(args))
+        #self.myThread = thread.start_new_thread(run, tuple(args))
+        self.myThread = thread.Thread(target=run, args=[url,])
+        self.myThread.start()
+        self.logger.info("Thread startup complete:" + str(self.myThread))
+        
     
     def save_status(self):
         # save to file:
@@ -101,9 +89,9 @@ class PodBot(object):
             #ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
             #ws.on_open = self.on_open
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-
-
             self.runSocket(url)
+            self.logger.info("Monitor startup complete")
+
             #while True:
             #    self.logger.debug("Running forever!")
             #ws = websocket.create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
