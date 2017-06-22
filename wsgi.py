@@ -35,9 +35,18 @@ def status_page():
     retStr = retStr + str(status)
     return retStr
 
+@application.route("/test")
+def test_page():
+    return [templating.load_page({'content': 'Hello World'}, "test.html"),]
+
 @application.route("/config")
 def config_page():
-    retStr = "OpenShift URL: " + os.environ["OPENSHIFT_URL"] 
+    retStr = "<table><tr><td>Name</td><td></tr>"
+    retStr += "<tr><td>OPENSHIFT_HOST</td><td>" + os.environ["OPENSHIFT_HOST"] + "</td></tr>"
+    retStr += "<tr><td>OPENSHIFT_NAMESPACE</td><td>" + os.environ["OPENSHIFT_NAMESPACE"] + "</td></tr>"
+    retStr += "<tr><td>OPENSHIFT_TOKEN</td><td>" + os.environ["OPENSHIFT_TOKEN"] + "</td></tr>"
+    retStr += "<tr><td>THRESHOLD</td><td>" + os.environ["THRESHOLD"] + "</td></tr>"
+    retStr += "</table>"
     return retStr
 
 if __name__ == "__main__":
