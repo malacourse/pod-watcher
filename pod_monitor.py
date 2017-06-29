@@ -105,6 +105,10 @@ class PodMonitor(object):
             self.logger.info("Current Log Level:" + str(self.log_level))
             self.logger.info("Restart Timeframe:" + str(self.timeframe))
             self.logger.info("Restart Threshold:" + str(self.threshold))
+            self.logger.info("Openshift Host:" + self.osHost)
+            self.logger.info("Openshift Token:" + self.osToken)
+            self.logger.info("Openshift Namespace:" + self.osNs)
+            self.logger.info("==========================================================")
 
             url="wss://" + self.osHost + "/api/v1/namespaces/" + self.osNs + "/pods?watch=true"
             ##&access_token=" + self.osToken
@@ -127,7 +131,7 @@ class PodMonitor(object):
                     for ps in saveddata:
                         data[ps["podName"]] = ps   
         except:
-            self.logger.error("Error reading Status")
+            self.logger.warn("Status file empty!")
             data = {}
 
         self.logger.debug("Loaded data:" + str(data))
@@ -148,31 +152,44 @@ class PodMonitor(object):
                 ps = {}
                 podStatus = self.get_status()
                 
-                ps["podName"] = contStatus[0]["name"]
-                ps["state"] = contStatus[0]["state"]
-                ps["restartCount"] = contStatus[0]["restartCount"]
-                ps["lastUpdateTime"] =  datetime.now().strftime(self.dateTimeFormat)
                 restartCount = int(contStatus[0]["restartCount"])
                 alertedCount = 0
-
+                newItem = True
+                podName = contStatus[0]["name"]
                 #don't keep sending alerts if already notified
-                if ps["podName"] in podStatus:
+                if podName in podStatus:
+                    ps = podStatus[podName]
+                    newItem = False
                     self.logger.debug("Existing Pod Data:" + str(podStatus[ps["podName"]]))
-                    alertStatus = podStatus[ps["podName"]]["alertStatus"]
-                    ps["alertStatus"] = alertStatus
+                    alertStatus = ps["alertStatus"]
                     alertedCount = int(podStatus[ps["podName"]]["alertedAtCount"])
                     if alertStatus == "Sent":
                         self.logger.debug("Current status is Sent")
                         if alertedCount <= restartCount:
                             restartCount = restartCount - alertedCount
+                    if alertedCount > restartCount:
+                        alertedCount = restartCount
+                        ps["alertStatus"] = "None"
                 else:
+                    alertedCount = restartCount
                     ps["alertStatus"] = "None"
+                    ps["podName"] = podName
+                    ps["state"] = contStatus[0]["state"]
+                    if "startTime" in status:
+                        ps["startTime"] = status["startTime"]
+                    else:
+                        ps["startTime"] = "made up"
+
+                ps["restartCount"] = contStatus[0]["restartCount"]
+                ps["lastUpdateTime"] =  datetime.now().strftime(self.dateTimeFormat)
+
                 self.logger.debug("Current reset count:" + str(restartCount))
                 self.logger.debug("AlertedAt count:" + str(alertedCount))
-                
+                                
+
                 ps["alertedAtCount"] = alertedCount
                 self.logger.debug("Current reset count:" + str(restartCount))
-                if restartCount > self.threshold:
+                if newItem == False and restartCount > self.threshold:
                     self.logger.warn("Theshold exceeded:" + str(self.threshold)) 
                     ps["alertStatus"] = "Warn"
                 podStatus[ps["podName"]] = ps

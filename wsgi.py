@@ -35,6 +35,25 @@ def default_page():
        status = "Error:" + str(sys.exc_info()[0])
     retStr = retStr + str(status)
     return retStr
+
+def get_current_config():
+    threshold = 5
+    configMinutes = 720
+    config = {}
+    if "OPENSHIFT_HOST" in os.environ:
+        osHost = os.environ["OPENSHIFT_HOST"]
+        config["host"] = osHost
+    if "OPENSHIFT_NAMESPACE" in os.environ:
+        osNs = os.environ["OPENSHIFT_NAMESPACE"]
+        config["namespace"] = osNs
+    if "RESTART_THRESHOLD" in os.environ:
+        threshold = int(os.environ["RESTART_THRESHOLD"])
+    if "RESTART_TIMEFRAME" in os.environ:
+        configMinutes = int(os.environ["RESTART_TIMEFRAME"])
+    config["timeframe"] = configMinutes
+    config["threshold"] = threshold
+    return config
+
     
 @application.route("/status")
 def status_service():
@@ -42,11 +61,12 @@ def status_service():
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
 
+    config = get_current_config()
     status = '{"status" : "None"}'
     try:
        items = PodStatusReader().get_status()
        if type(items) == list:
-           status = '{"pods" : ' + json.dumps(items) + '}'
+           status = '{"pods" : ' + json.dumps(items) + ',"config" :'  + json.dumps(config) + '}'
        return status
     except:
        print(traceback.format_exc())

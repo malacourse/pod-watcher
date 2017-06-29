@@ -14,11 +14,11 @@ class PodStatusReader():
 
     def get_status(self):
         # load from file:
-        with open(self.filePath, 'rb') as f:
-            try:
+        try:
+            with open(self.filePath, 'rb') as f:
                 data = pickle.load(f)
-            except ValueError:
-                data = []
+        except:
+	    data = []
         self.logger.debug("Data:" + str(data))
         return data
 
