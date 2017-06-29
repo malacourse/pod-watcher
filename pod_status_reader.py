@@ -2,9 +2,9 @@
 import logging
 import pickle
 import os
+import json
 
 class PodStatusReader():
-
 
     def __init__(self):
         self.filePath = "/var/lib/podstatus/pod_status.txt"
@@ -18,7 +18,28 @@ class PodStatusReader():
             try:
                 data = pickle.load(f)
             except ValueError:
-                data = {}
-        self.logger.info("Data:" + str(data))
+                data = []
+        self.logger.debug("Data:" + str(data))
         return data
+
+    def save_status(self, ps):
+        # save to file:
+        with open(self.filePath, 'wb') as f:
+            pickle.dump(ps, f)
+            f.close()
+
+    def get_alerts(self):
+        status = self.get_status()
+        retStatus = []
+        for ps in status:
+           if ps["alertStatus"] == "Warn":
+              retStatus.append(ps)
+              ps["alertedAtCount"] = ps["restartCount"]
+              ps["alertStatus"] = "Sent"
+
+        if len(retStatus) > 0:
+            self.logger.info("Reported alerts")
+            self.save_status(status)
+        return json.dumps(retStatus)             
+       
 

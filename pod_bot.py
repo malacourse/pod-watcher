@@ -18,7 +18,8 @@ class PodBot(object):
 
     def __init__(self):
         self.osURL = "localhost:8443/api/v1/namespaces/test"
-        self.osToken = "QqFVOYew09aAbfnUhlzq2QoyVmYG1OBKkxp_3yUIOgs"
+        #self.osToken = "I1p82momrsfoXB2xI7ROhw2CtaGuQjdyjTJIq7jwGUo"
+        self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHN0YXR1c3NhLXRva2VuLXh2emd6Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6InBvZHN0YXR1c3NhIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiMWZiMjE0ZjQtNTc2OS0xMWU3LTk0ODUtMDgwMDI3Mzc0OTU0Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OnRlc3Q6cG9kc3RhdHVzc2EifQ.OKJqZ_oOHQkKmR-cj_MLvdbbZ5TSE6IEJsKGNRjiH8K__P75fzbvLaaxeqYpeqhzW1ShuFLac1JJYNRSLINjonDRd_EwXCw0-NhDQmDCS8ZQOBu0_F3RTETGj5xA1PzaYj8K0PKZM558plzpw9G9AfUKVq7mQzCZqHMuuUuPd5mrQjFAKjXRxEhD93PCmGgI6pOHgxaQnMTTxaHmOwReXD2C_8U0JvQwpVoQWfomiqm9MeI4-RWzWReAMIUvRZ41LNoZkK3gPL1emGRT5aMbDqOoEHzDscOZdCzEjNSh6lxmGQCmoUd5QDFm-jQltoJq_DGOWDVwy6IAepz3fcqcyw"
         self.filePath = "/var/lib/podstatus/pod_status.txt"
         self.logger = logging.getLogger(__name__)
         self.logger.info("START")
@@ -51,7 +52,8 @@ class PodBot(object):
                 time.sleep(1)
                 #url = urllib.pathname2url(url)
                 self.logger.info("URL" + url)
-                self.ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close=self.on_close)
+		self.myHeader = {"Authorization: Bearer "  + self.osToken} 
+                self.ws = websocket.WebSocketApp(url, header=self.myHeader,on_message = self.on_message, on_error = self.on_error, on_close=self.on_close)
                 #ws.on_open = self.on_open
                 self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
                 self.logger.warn("thread terminating...")
@@ -85,9 +87,7 @@ class PodBot(object):
 
             #sslopt={"cert_reqs": ssl.CERT_NONE},
             #websocket.enableTrace(True)
-            url="wss://" + self.osURL + "/pods?watch=true&access_token=" + self.osToken
-            #ws = websocket.WebSocketApp(url, on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
-            #ws.on_open = self.on_open
+            url="wss://" + self.osURL + "/pods?watch=true"
             #ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
             self.runSocket(url)
             self.logger.info("Monitor startup complete")
@@ -113,7 +113,7 @@ class PodBot(object):
 
 
     def parse_json(self, json):
-        self.logger.info("json:" + str(json.__class__))
+        self.logger.debug("json:" + str(json))
         
         status = json["object"]["status"]
         #meta = json["object"]["metadata"]
@@ -121,18 +121,15 @@ class PodBot(object):
         #self.logger.info("status:" + str(status))
         #self.logger.info("meta:" + str(meta))
         #self.logger.info("spec:" + str(spec))
-        self.logger.error("STATUS:" + str(status.__class__))
         if type(status) is dict:
             contStatus = status["containerStatuses"]
             #conditions = status["conditions"]
-            self.logger.info("name:" + contStatus[0]["name"])
-            self.logger.info("image:" + contStatus[0]["image"])
             if "ose-" not in contStatus[0]["image"]:
-                self.logger.info("Not OSI Image")
                 self.logger.info("contStatus:" + str(contStatus[0]))
                 #podstatus = PodStatus(contStatus[0]["name"], contStatus[0]["image"],contStatus[0]["restartCount"])
                 ps = {}
                 ps["state"] = contStatus[0]["state"]
+                ps["podName"] = contStatus[0]["name"]
                 ps["restartCount"] = contStatus[0]["restartCount"]
                 self.podStatus[contStatus[0]["name"]] = ps
         else:
