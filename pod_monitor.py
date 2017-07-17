@@ -19,7 +19,7 @@ class PodMonitor(object):
     def __init__(self):
         self.osHost = "192.168.99.100:8443"
         self.osNs = "test"
-        self.osToken = "2ry4PaE0XNlCd0Po1YPMC3JdYxPlOOLIS_6TFOwNRLA"
+        self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHdhdGNoZXJzYS10b2tlbi03ZjNnMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJwb2R3YXRjaGVyc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJiMDg5YzRhYS02YjFlLTExZTctYjdiOC0wODAwMjdlYTczYzciLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6dGVzdDpwb2R3YXRjaGVyc2EifQ.N_bYQs-Pg_1xpDg2M66xI4TM5ag2AOVYipgUBPptT6Z3qbR0q3RPyJVyTVnAvSFBhg2_kUT4WGGKi6qXzCwRBfXo_Yu_WCL4P-dTlZ0dd0OBNh-kbgPnSfsi0_j9lRBHtm-NH7BB037SiKLuzDY6A0q3QoUnUhzJDgLp9h3ci33CaXwLPUdFFHXhL0xj5yfahLyInCJL1jCK1vgylpynhDqEoeO4keOmA7OhEN6s1cdN6dDbTvr8leky1AKuIQYWJY_ieskULgusfvR99sRSKIBFklLQ1UXdLsmVFOXTdvc3HeO04B0kHsQminasJEFJ-0-v81DZkPq-Mt1O7lfMRA"
         self.filePath = "/var/lib/podstatus/pod_status.txt"
         self.logger = logging.getLogger(__name__)
         self.threshold = 5
@@ -186,10 +186,13 @@ class PodMonitor(object):
                 self.logger.debug("Current reset count:" + str(restartCount))
                 self.logger.debug("AlertedAt count:" + str(alertedCount))
                                 
+                restartDelta = restartCount
+                if alertedCount <= restartCount:
+                    restartDelta = restartCount - alertedCount
 
                 ps["alertedAtCount"] = alertedCount
                 self.logger.debug("Current reset count:" + str(restartCount))
-                if newItem == False and restartCount > self.threshold:
+                if newItem == False and restartDelta > self.threshold:
                     self.logger.warn("Theshold exceeded:" + str(self.threshold)) 
                     ps["alertStatus"] = "Warn"
                 podStatus[ps["podName"]] = ps
