@@ -37,7 +37,7 @@ def default_page():
     return retStr
 
 def get_current_config():
-    threshold = 5
+    threshold = 3
     configMinutes = 720
     config = {}
     if "OPENSHIFT_HOST" in os.environ:
@@ -57,7 +57,7 @@ def get_current_config():
     
 @application.route("/status")
 def status_service():
-    threshold = 1
+    threshold = 3
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
 
@@ -75,7 +75,7 @@ def status_service():
     
 @application.route("/pod-restart-alerts")
 def restart_alerts():
-    threshold = 1
+    threshold = 3
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
 

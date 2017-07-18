@@ -52,26 +52,26 @@
 </div>
 <br><br>
 <div class="podStatus">
-<table>
+<table border="1">
     <thead>
         <tr>
 	  <th>Name</th>
-          <th>Restart Count</th>
-          <th>Alerted At Count</td>
+          <th>Total Restart Count</th>
+          <th>Current Count</td>
           <th>Alert Status</th>
           <th>Last Update</th>
-          <th>Start Time</th>
+          <th>Restart Times</th>
           <th>State</th>
       </tr>
     </thead>
     <tbody data-bind="foreach: pods">
         <tr data-bind="attr: {'class' : alertStatus == 'Warn' ? 'podRowAlert' : 'podRowNormal'}">
             <td data-bind="text: podName"></td>
-            <td data-bind="text: restartCount"></td>
-             <td data-bind="text: alertedAtCount"</td>
+            <td data-bind="text: totalRestartCount"></td>
+             <td data-bind="text: currentRestarts"</td>
              <td data-bind="text: alertStatus"></td>
              <td data-bind="text: lastUpdateTime"</td>
-             <td data-bind="text: startTime"</td>
+             <td data-bind="text: restarts"</td>
             <td data-bind="text: JSON.stringify(state)"></td>
         </tr>
     </tbody>

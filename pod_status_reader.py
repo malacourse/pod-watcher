@@ -18,7 +18,7 @@ class PodStatusReader():
             with open(self.filePath, 'rb') as f:
                 data = pickle.load(f)
         except:
-	    data = []
+	        data = []
         self.logger.debug("Data:" + str(data))
         return data
 
@@ -33,9 +33,10 @@ class PodStatusReader():
         retStatus = []
         for ps in status:
            if ps["alertStatus"] == "Warn":
-              retStatus.append(ps)
-              ps["alertedAtCount"] = ps["restartCount"]
+              retStatus.append(dict(ps))
               ps["alertStatus"] = "Sent"
+              ps["restarts"] = []
+              ps["currentRestarts"] = 0
 
         if len(retStatus) > 0:
             self.logger.info("Reported alerts")

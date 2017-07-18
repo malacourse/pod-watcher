@@ -3,6 +3,7 @@
 import datetime
 import time
 import re
+import pytz
 import sys
 import os
 import pickle
@@ -24,7 +25,7 @@ class PodMonitor(object):
         self.logger = logging.getLogger(__name__)
         self.threshold = 5
         self.log_level = logging.INFO
-        self.timeframe = timedelta(hours=12)
+        self.timeframe = timedelta(hours=4)
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
         if "OPENSHIFT_HOST" in os.environ:
@@ -39,7 +40,7 @@ class PodMonitor(object):
            self.threshold = int(os.environ["RESTART_THRESHOLD"])
         if "RESTART_TIMEFRAME" in os.environ:
            configMinutes = int(os.environ["RESTART_TIMEFRAME"])
-           self.timeframe = timedelta(minutes=confMinutes)
+           self.timeframe = timedelta(minutes=configMinutes)
         if "PODMONITOR_LOGLEVEL" in os.environ:
            configLevel = os.environ["PODMONITOR_LOGLEVEL"]
            if configLevel == "WARN": self.log_level = logging.WARN
@@ -77,6 +78,23 @@ class PodMonitor(object):
         t = thread.Thread(target=run, args=(url,))
         t.start()
         self.logger.info("Thread started!")
+
+    local_tz = pytz.timezone('America/New_York')
+    def utc_to_local(self, utc_dt):
+        self.logger.debug("UTC TIME:" + str(utc_dt))
+        local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(self.local_tz)
+        self.logger.debug("UTC NEW TIME:" + str(local_dt))
+        return self.local_tz.normalize(local_dt).strftime(self.dateTimeFormat)
+
+    def remove_old_restarts(self, currentList):
+        newList = []
+        today = datetime.now()
+        self.logger.debug("DELTA:" + str(self.timeframe))
+        for strTime in currentList:
+            rs_dt = datetime.strptime(strTime,self.dateTimeFormat)            
+            if rs_dt >= today - self.timeframe:
+               newList.append(strTime)
+        return newList
  
     def save_status(self,podStatus):
         # save to file:
@@ -148,51 +166,61 @@ class PodMonitor(object):
             #conditions = status["conditions"]
             #self.logger.info("name:" + contStatus[0]["name"])
             if "ose-" not in contStatus[0]["image"]:
-                self.logger.info("contStatus:" + str(contStatus[0]))
+                msgType = str(json["type"])
+                self.logger.info("contStatus:" + str(contStatus[0]) + ", TYPE:" + msgType)
+                self.logger.debug("Msg:" + str(json))
                 ps = {}
                 podStatus = self.get_status()
                 
-                restartCount = int(contStatus[0]["restartCount"])
-                alertedCount = 0
+                totalRestartCount = int(contStatus[0]["restartCount"])
+                baseRestartCount = 0
                 newItem = True
                 podName = contStatus[0]["name"]
-                #don't keep sending alerts if already notified
                 if podName in podStatus:
-                    ps = podStatus[podName]
-                    newItem = False
-                    self.logger.debug("Existing Pod Data:" + str(podStatus[ps["podName"]]))
-                    alertStatus = ps["alertStatus"]
-                    alertedCount = int(podStatus[ps["podName"]]["alertedAtCount"])
-                    if alertStatus == "Sent":
-                        self.logger.debug("Current status is Sent")
-                        if alertedCount <= restartCount:
-                            restartCount = restartCount - alertedCount
-                    if alertedCount > restartCount:
-                        alertedCount = restartCount
-                        ps["alertStatus"] = "None"
-                else:
-                    alertedCount = restartCount
+                  ps = podStatus[podName]
+                if msgType == "ADDED":
+                    baseRestartCount = totalRestartCount
                     ps["alertStatus"] = "None"
                     ps["podName"] = podName
                     ps["state"] = contStatus[0]["state"]
                     if "startTime" in status:
                         ps["startTime"] = status["startTime"]
                     else:
-                        ps["startTime"] = "made up"
+                        ps["startTime"] = ""
+                    baseRestartCount = totalRestartCount
+                    ps["restarts"] = []
+                else:
+                    if msgType == "DELETED":
+                      ps["restarts"] = []
+                    else:
+                        restartTime = datetime.now().strftime(self.dateTimeFormat)
+                        if "running" in contStatus[0]["state"]:
+                            restartTime = contStatus[0]["state"]["running"]["startedAt"]
+			    utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
+                            restartTime = self.utc_to_local(utcTime)
+                        if "terminated" in contStatus[0]["state"]:
+                           restartTime = contStatus[0]["state"]["terminated"]["startedAt"]
+                           utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
+                           restartTime = self.utc_to_local(utcTime)
+                        
+                        ps["restarts"].append(restartTime)
 
-                ps["restartCount"] = contStatus[0]["restartCount"]
+                if "terminated" in contStatus[0]["state"]:
+                    ps["alertStatus"] = "Warn"
+                if "waiting" in contStatus[0]["state"] and contStatus[0]["state"]["waiting"]["reason"] == "CrashLoopBackOff":
+                    ps["alertStatus"] = "Warn"
+
+                ps["totalRestartCount"] = totalRestartCount
                 ps["lastUpdateTime"] =  datetime.now().strftime(self.dateTimeFormat)
 
-                self.logger.debug("Current reset count:" + str(restartCount))
-                self.logger.debug("AlertedAt count:" + str(alertedCount))
+                self.logger.info("Total reset count:" + str(totalRestartCount))
+                self.logger.info("Recent Restart count:" + str(baseRestartCount))
                                 
-                restartDelta = restartCount
-                if alertedCount <= restartCount:
-                    restartDelta = restartCount - alertedCount
-
-                ps["alertedAtCount"] = alertedCount
-                self.logger.debug("Current reset count:" + str(restartCount))
-                if newItem == False and restartDelta > self.threshold:
+                if ps["alertStatus"] != "Warn":
+                    ps["restarts"] = self.remove_old_restarts(ps["restarts"])
+                ps["currentRestarts"] = len(ps["restarts"])
+                self.logger.debug("Current reset count:" + str(ps["currentRestarts"]))
+                if len(ps["restarts"]) >= self.threshold:
                     self.logger.warn("Theshold exceeded:" + str(self.threshold)) 
                     ps["alertStatus"] = "Warn"
                 podStatus[ps["podName"]] = ps
