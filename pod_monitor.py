@@ -196,7 +196,7 @@ class PodMonitor(object):
                         restartTime = datetime.now().strftime(self.dateTimeFormat)
                         if "running" in contStatus[0]["state"]:
                             restartTime = contStatus[0]["state"]["running"]["startedAt"]
-			    utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
+			    			utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
                             restartTime = self.utc_to_local(utcTime)
                         if "terminated" in contStatus[0]["state"]:
                            restartTime = contStatus[0]["state"]["terminated"]["startedAt"]
