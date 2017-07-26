@@ -115,8 +115,8 @@ class PodStatusReader():
            headers = {"Authorization" : "Bearer " + self.osToken}
            self.logger.info("GET EVENTS URL:" + url)
            retStatus = requests.get(url, headers=headers, verify=False)
-           self.logger.debug("EVENTS TYPE:" + str(type(retStatus.content)))
-           if retStatus.content is bytes:
+           self.logger.info("EVENTS TYPE:" + str(type(retStatus.content)))
+           if isinstance(retStatus.content,bytearray):
               strEvents = retStatus.content.decode("utf-8")
            else:
               strEvents = retStatus.content
