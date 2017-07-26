@@ -113,7 +113,7 @@ class PodStatusReader():
         try:
            url = "https://" + self.osHost + "/api/v1/namespaces/" + namespace + "/events"
            headers = {"Authorization" : "Bearer " + self.osToken}
-           self.logger.debug("URL:" + url)
+           self.logger.info("GET EVENTS URL:" + url)
            retStatus = requests.get(url, headers=headers, verify=False)
            self.logger.info("EVENTS RET:" + str(retStatus.content))
            self.logger.info("EVENTS TYPE:" + str(type(retStatus.content)))
