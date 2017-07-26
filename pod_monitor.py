@@ -206,8 +206,9 @@ class PodMonitor(object):
                     ps["restarts"] = []
                 else:
                     if msgType == "DELETED":
-                      del podStatus[podName]
-                      self.save_status(podStatus, namespace)
+                      if podName in podStatus:
+                         del podStatus[podName]
+                         self.save_status(podStatus, namespace)
                       return
                     else:
                         restartTime = datetime.now().strftime(self.dateTimeFormat)
