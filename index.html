@@ -7,26 +7,88 @@
     <style>
        .podRowAlert {color:red;}
        .podRowNormal {color:black;}
+       .eventsDiv {
+          position: relative;
+          display: inline-block;
+          cursor: pointer;
+       }
+
+       /* The actual popup (appears on top) */
+       .eventsDiv .popuptext {
+          visibility: hidden;
+          width: 80%;
+          height: 60%;
+          background-color: #999999;
+          color: black;
+          text-align: center;
+          border-radius: 6px;
+          padding: 8px 8px;
+          position: fixed;
+          z-index: 1;
+          overflow-x:scroll; overflow-y: scroll;
+          left: 10%;
+       }
+
+      .eventsDiv .popuptext table {
+          background-color: #ffffff;
+          color: black;
+          text-align: center;
+          border: 1;
+       }
+
+       /* Toggle this class when clicking on the popup container (hide and show the popup) */
+       .eventsDiv .show {
+          visibility: visible;
+       }
     </style>
-    <meta http-equiv="refresh" content="60">
+    <meta http-equiv="refresh" content="60" name="refresh">
 <body>
 <script>
+  var self = this;
   function podsModel() {
-    var self = this;
-    self.pods = ko.observableArray([]);
+    self.namespaces = ko.observableArray([]);
     self.config = ko.observable();
+    self.events = ko.observableArray([]);
     $.getJSON("/status",function (data) {
-            self.pods(data.pods);
+            self.namespaces(data.namespaces);
             self.config(data.config);
-            console.log("Data:" + JSON.stringify(data));
-            console.log("Config:" + self.config);
-        }
-    );
+            //console.log("Data:" + JSON.stringify(data));
+            //console.log("Config:" + self.config);
+            refreshTime = $('meta[name=refresh]').attr("content");
+            console.log("Current Refresh Time:" + data.config.pageRefreshSeconds);
+            if (data.config.pageRefreshSeconds)
+            {
+                console.log("Updating Refresh Time")
+                $('meta[name=refresh]').attr('content', data.config.pageRefreshSeconds);
+	    }
+     });
 };
+
 
  $(document).ready(function() {
     ko.applyBindings(new podsModel());
 });
+
+function getEvents(data) {
+  //self = this;
+  console.log($(data).attr('namespace'));
+  console.log($(data).attr('podname'));
+  namespace = $(data).attr('namespace');
+  podname = $(data).attr('podname');
+  $.getJSON("/events/" + namespace + "/" + podname,function (data) {
+    self.events(data);
+    var popup = document.getElementById("myPopup");
+    //$("#eventsPara").html(JSON.stringify(data));
+    $('.podName').html("<h3>Pod Name:" + podname + "</h3>");
+    console.log("Pnd" + $('.podName'));
+    popup.classList.toggle("show");
+  });
+}
+
+function hideEvents() {
+    var popup = document.getElementById("myPopup");
+    popup.classList.toggle("show");
+}
 </script>
 <h1>Pod Monitor</h1>
 <br/>
@@ -34,6 +96,29 @@
 <br>
 <a href="/pod-restart-alerts">Get Alerts</a>
 <br><br>
+<div class="eventsDiv">
+    <span class="popuptext" id="myPopup"><div class="podName"></div>
+<table border="1">
+    <thead>
+        <tr>
+          <th>Time</th>
+          <th>Reason</th>
+          <th>Message</th>
+      </tr>
+    </thead>
+      <tbody data-bind="foreach: events">
+        <tr>
+            <td data-bind="text: localizedTime"></td>
+            <td data-bind="text: reason"></td>
+            <td data-bind="text: message"></td>
+        </tr>
+      </tbody>
+  </table>
+
+
+
+ <button onclick="hideEvents()">Close</button></span>
+</div>
 <div class="configInfo">
 <table>
     <thead>
@@ -51,7 +136,10 @@
 </table>
 </div>
 <br><br>
-<div class="podStatus">
+<div class="podStatus" data-bind="foreach: namespaces">
+<br>
+<h3>Namespace:<span data-bind="text: namespace"></span></h3>
+
 <table border="1">
     <thead>
         <tr>
@@ -62,20 +150,22 @@
           <th>Last Update</th>
           <th>Restart Times</th>
           <th>State</th>
+          <th></th>
       </tr>
     </thead>
-    <tbody data-bind="foreach: pods">
-        <tr data-bind="attr: {'class' : alertStatus == 'Warn' ? 'podRowAlert' : 'podRowNormal'}">
-            <td data-bind="text: podName"></td>
+      <tbody data-bind="foreach: pods">
+        <tr data-bind="attr: {'class' : alertStatus == 'Warning' || alertStatus == 'Failure' ? 'podRowAlert' : 'podRowNormal'}">
+            <td data-bind="text: podLongName"></td>
             <td data-bind="text: totalRestartCount"></td>
              <td data-bind="text: currentRestarts"</td>
              <td data-bind="text: alertStatus"></td>
              <td data-bind="text: lastUpdateTime"</td>
              <td data-bind="text: restarts"</td>
-            <td data-bind="text: JSON.stringify(state)"></td>
+             <td data-bind="text: JSON.stringify(state)"></td>
+             <td><button data-bind="attr: {namespace: namespace, podname: podLongName}" onclick="getEvents(this)">Events</button></td>
         </tr>
-    </tbody>
-</table>
+      </tbody>
+  </table>
 </div> 
 </body>
 </html>

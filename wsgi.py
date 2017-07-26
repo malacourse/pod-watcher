@@ -9,36 +9,10 @@ import json
 monitor = PodMonitor().start()
 application = Flask(__name__)
 
-@application.route("/test")
-def default_page():
-    retStr =  "<h1>Pod Status Page</h1>"
-    retStr +=  "<h2><a href='/config'>Configuration</a></h2>"
-    
-    threshold = 1
-    if "RESTART_THRESHOLD" in os.environ:
-           threshold = int(os.environ["RESTART_THRESHOLD"])
-
-    status = "<p>No Status</p>"
-    try:
-       items = PodStatusReader().get_status()
-       if type(items) == list:
-           status = "<table><tr><td>Name</td><td>Restart Count</td><td>State</td></tr>"
-           for ps in items:
-               #status += "<tr>"
-               status += "<tr>" if ps["restartCount"] < threshold else "<tr style='color:#ff0000;'>"
-               status += "<td>" + ps["podName"] + "</td><td>" + str(ps["restartCount"]) + "</td><td>" + str(ps["state"]) + "</td>" 
-               status += "</tr>"
-           status += "</table>"
-
-    except:
-       print(traceback.format_exc())
-       status = "Error:" + str(sys.exc_info()[0])
-    retStr = retStr + str(status)
-    return retStr
-
 def get_current_config():
     threshold = 3
     configMinutes = 720
+    pageRefreshSeconds = 30
     config = {}
     if "OPENSHIFT_HOST" in os.environ:
         osHost = os.environ["OPENSHIFT_HOST"]
@@ -50,23 +24,47 @@ def get_current_config():
         threshold = int(os.environ["RESTART_THRESHOLD"])
     if "RESTART_TIMEFRAME" in os.environ:
         configMinutes = int(os.environ["RESTART_TIMEFRAME"])
+    if "PM_PAGEREFERSH_SECONDS" in os.environ:
+        pageRefreshSeconds = int(os.environ["PM_PAGEREFRESH_SECONDS"])
+    config["pageRefreshSeconds"] = pageRefreshSeconds
     config["timeframe"] = configMinutes
     config["threshold"] = threshold
     return config
 
-    
+def get_namespaces(namespaces):
+    ret = []
+    if "," in namespaces:
+       ret = namespaces.split(",")
+    else:
+       ret = [namespaces]
+    return ret
+
 @application.route("/status")
 def status_service():
     threshold = 3
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
+    namespaces = "test"
+    if "OPENSHIFT_NAMESPACE" in os.environ:
+        namespaces = os.environ["OPENSHIFT_NAMESPACE"]
 
+    nslist = get_namespaces(namespaces)
     config = get_current_config()
     status = '{"status" : "None"}'
     try:
-       items = PodStatusReader().get_status()
-       if type(items) == list:
-           status = '{"pods" : ' + json.dumps(items) + ',"config" :'  + json.dumps(config) + '}'
+       nCount = 0
+       for namespace in nslist:
+          items = PodStatusReader(namespace).get_status()
+          if type(items) == list:
+              if nCount == 0:
+                 status = '{"config" :'  + json.dumps(config) + ',"namespaces" :['
+              else:
+                 status = status + ','
+              status += '{"namespace" : "' + namespace + '", "pods" : ' + json.dumps(items) + '}'
+          nCount = nCount + 1
+       if nCount > 0:
+          status += ']}'
+       
        return status
     except:
        print(traceback.format_exc())
@@ -78,13 +76,39 @@ def restart_alerts():
     threshold = 3
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
+    namespaces = "test"
+    if "OPENSHIFT_NAMESPACE" in os.environ:
+        namespaces = os.environ["OPENSHIFT_NAMESPACE"]
 
+    nslist = get_namespaces(namespaces)
     status = '{"status" : "None"}'
     try:
-       status = PodStatusReader().get_alerts()
+       status = PodStatusReader().get_alerts(nslist)
     except:
        print(traceback.format_exc())
        status = '{"status" : "Pod Monitor Error"}'
+    return status
+
+@application.route("/events/<namespace>")
+@application.route("/events/<namespace>/<podname>")
+def get_events(namespace,podname="None"):
+    status = '{"events" : "None"}'
+    try:
+       status = json.dumps(PodStatusReader().get_events(namespace,podname)) 
+    except:
+       print(traceback.format_exc())
+       status = '{"events" : "Pod Monitor Error"}'
+    return status
+
+@application.route("/pods/<namespace>")
+@application.route("/pods/<namespace>/<podname>")
+def get_pods(namespace,podname="None"):
+    status = '{"pods" : "None"}'
+    try:
+       status = json.dumps(PodStatusReader().get_pods(namespace,podname))
+    except:
+       print(traceback.format_exc())
+       status = '{"pods" : "Pod Monitor Error"}'
     return status
 
 

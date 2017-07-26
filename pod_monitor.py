@@ -3,7 +3,7 @@
 import datetime
 import time
 import re
-import pytz
+from pytz import utc, timezone
 import sys
 import os
 import pickle
@@ -21,13 +21,14 @@ class PodMonitor(object):
         self.osHost = "192.168.99.100:8443"
         self.osNs = "test"
         self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHdhdGNoZXJzYS10b2tlbi03ZjNnMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJwb2R3YXRjaGVyc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJiMDg5YzRhYS02YjFlLTExZTctYjdiOC0wODAwMjdlYTczYzciLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6dGVzdDpwb2R3YXRjaGVyc2EifQ.N_bYQs-Pg_1xpDg2M66xI4TM5ag2AOVYipgUBPptT6Z3qbR0q3RPyJVyTVnAvSFBhg2_kUT4WGGKi6qXzCwRBfXo_Yu_WCL4P-dTlZ0dd0OBNh-kbgPnSfsi0_j9lRBHtm-NH7BB037SiKLuzDY6A0q3QoUnUhzJDgLp9h3ci33CaXwLPUdFFHXhL0xj5yfahLyInCJL1jCK1vgylpynhDqEoeO4keOmA7OhEN6s1cdN6dDbTvr8leky1AKuIQYWJY_ieskULgusfvR99sRSKIBFklLQ1UXdLsmVFOXTdvc3HeO04B0kHsQminasJEFJ-0-v81DZkPq-Mt1O7lfMRA"
-        self.filePath = "/var/lib/podstatus/pod_status.txt"
+        self.filePath = "/var/lib/podstatus/"
         self.logger = logging.getLogger(__name__)
         self.threshold = 5
         self.log_level = logging.INFO
         self.timeframe = timedelta(hours=4)
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
+        self.displayTimeFormat = "%m/%d/%Y-%H:%M:%S"
         if "OPENSHIFT_HOST" in os.environ:
            self.osHost = os.environ["OPENSHIFT_HOST"]
         if "OPENSHIFT_NAMESPACE" in os.environ:
@@ -48,9 +49,14 @@ class PodMonitor(object):
            if configLevel == "ERROR": self.log_level = logging.ERROR
 
     def on_message(self, ws, message):
+        namespace = "notset"
+        for headerItem in ws.header:
+           if "OSNS" in headerItem:
+              namespace = headerItem[len("OSNS:"):].strip()
+        self.logger.debug("Current Namespace:" + namespace)
         self.logger.debug(message)
         parsed_json = json.loads(message)
-        self.parse_json(parsed_json)
+        self.parse_json(parsed_json, namespace)
 
     def on_error(self, ws, error):
         self.logger.info (error)
@@ -63,10 +69,11 @@ class PodMonitor(object):
        self.logger.info ("pod bot status module")
       
 
-    def runSocket(self,url):
+    def runSocket(self,url,namespace):
         def run(url):
                 self.logger.info("Thread start: " + url)
-                header = {"Authorization: Bearer " + self.osToken}
+                self.save_status({},namespace)
+                header = {"Authorization: Bearer " + self.osToken, "OSNS: " + namespace}
                 ws = websocket.WebSocketApp(url, header=header,on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
                 #ws.on_open = self.on_open
                 ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
@@ -79,12 +86,12 @@ class PodMonitor(object):
         t.start()
         self.logger.info("Thread started!")
 
-    local_tz = pytz.timezone('America/New_York')
-    def utc_to_local(self, utc_dt):
+    local_tz = timezone('America/New_York')
+    def utc_to_local(self, utc_dt, dtFormat):
         self.logger.debug("UTC TIME:" + str(utc_dt))
-        local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(self.local_tz)
+        local_dt = utc_dt.replace(tzinfo=utc).astimezone(self.local_tz)
         self.logger.debug("UTC NEW TIME:" + str(local_dt))
-        return self.local_tz.normalize(local_dt).strftime(self.dateTimeFormat)
+        return self.local_tz.normalize(local_dt).strftime(dtFormat)
 
     def remove_old_restarts(self, currentList):
         newList = []
@@ -96,14 +103,14 @@ class PodMonitor(object):
                newList.append(strTime)
         return newList
  
-    def save_status(self,podStatus):
+    def save_status(self,podStatus,namespace):
         # save to file:
         podList = []
         try:
             for key, ps in podStatus.items():
                podList.append(ps)
         
-            with open(self.filePath, 'wb') as f:
+            with open(self.filePath + namespace, 'wb') as f:
                 pickle.dump(podList, f)
                 f.close()
         except:
@@ -128,10 +135,20 @@ class PodMonitor(object):
             self.logger.info("Openshift Namespace:" + self.osNs)
             self.logger.info("==========================================================")
 
-            url="wss://" + self.osHost + "/api/v1/namespaces/" + self.osNs + "/pods?watch=true"
-            ##&access_token=" + self.osToken
-
-            self.runSocket(url)
+            if "," in self.osNs:
+               self.logger.info("Running accross namespaces:" + self.osNs)
+               nslist = self.osNs.split(",")
+               for namespace in nslist:
+                  self.logger.info("Running Monitory for namespace:" + namespace)
+                  url="wss://" + self.osHost + "/api/v1/namespaces/" + namespace + "/pods?watch=true"
+                  ##&access_token=" + self.osToken
+                  self.runSocket(url,namespace)
+              
+            else:
+               self.logger.info("Running Monitory for single namespace:" + self.osNs)
+               url="wss://" + self.osHost + "/api/v1/namespaces/" + self.osNs + "/pods?watch=true"
+               ##&access_token=" + self.osToken
+               self.runSocket(url,self.osNs)
             
         except KeyboardInterrupt:
             logging.critical("Terminating due to keyboard interrupt")
@@ -139,11 +156,11 @@ class PodMonitor(object):
             logging.critical("Terminating due to unexpected error: %s", sys.exc_info()[0])
             logging.critical("%s", traceback.format_exc())
  
-    def get_status(self):
+    def get_status(self,namespace):
         # load from file:
         data = {}
         try:
-            with open(self.filePath, 'rb') as f:
+            with open(self.filePath + namespace, 'rb') as f:
                 saveddata = pickle.load(f)
                 if type(saveddata) == list:
                     for ps in saveddata:
@@ -156,7 +173,7 @@ class PodMonitor(object):
         return data
 
 
-    def parse_json(self, json):
+    def parse_json(self, json, namespace):
         self.logger.debug("json:" + str(json))
         
         status = json["object"]["status"]
@@ -167,64 +184,71 @@ class PodMonitor(object):
             #self.logger.info("name:" + contStatus[0]["name"])
             if "ose-" not in contStatus[0]["image"]:
                 msgType = str(json["type"])
+                podFullName = json["object"]["metadata"]["name"]
                 self.logger.info("contStatus:" + str(contStatus[0]) + ", TYPE:" + msgType)
                 self.logger.debug("Msg:" + str(json))
                 ps = {}
-                podStatus = self.get_status()
+                podStatus = self.get_status(namespace)
                 
                 totalRestartCount = int(contStatus[0]["restartCount"])
-                baseRestartCount = 0
-                newItem = True
                 podName = contStatus[0]["name"]
                 if podName in podStatus:
                   ps = podStatus[podName]
-                if msgType == "ADDED":
-                    baseRestartCount = totalRestartCount
+                else:
                     ps["alertStatus"] = "None"
                     ps["podName"] = podName
-                    ps["state"] = contStatus[0]["state"]
-                    if "startTime" in status:
-                        ps["startTime"] = status["startTime"]
-                    else:
-                        ps["startTime"] = ""
-                    baseRestartCount = totalRestartCount
+                    ps["restarts"] = []
+                    ps["totalRestartCount"] = 0
+                    ps["startTime"] = ""
+                if msgType == "ADDED":
+                    ps["alertStatus"] = "None"
+                    ps["podName"] = podName
                     ps["restarts"] = []
                 else:
                     if msgType == "DELETED":
-                      ps["restarts"] = []
+                      del podStatus[podName]
+                      self.save_status(podStatus, namespace)
+                      return
                     else:
                         restartTime = datetime.now().strftime(self.dateTimeFormat)
                         if "running" in contStatus[0]["state"]:
                             restartTime = contStatus[0]["state"]["running"]["startedAt"]
                             utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
-                            restartTime = self.utc_to_local(utcTime)
-                        if "terminated" in contStatus[0]["state"]:
-                           restartTime = contStatus[0]["state"]["terminated"]["startedAt"]
-                           utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
-                           restartTime = self.utc_to_local(utcTime)
-                        
-                        ps["restarts"].append(restartTime)
+                            restartTime = self.utc_to_local(utcTime, self.dateTimeFormat)
 
-                if "terminated" in contStatus[0]["state"]:
-                    ps["alertStatus"] = "Warn"
-                if "waiting" in contStatus[0]["state"] and contStatus[0]["state"]["waiting"]["reason"] == "CrashLoopBackOff":
-                    ps["alertStatus"] = "Warn"
+                        if totalRestartCount > int(ps["totalRestartCount"]):
+                           ps["restarts"].append(restartTime)
+
+
+                if ps["alertStatus"] != "Sent" and "waiting" in contStatus[0]["state"] and contStatus[0]["state"]["waiting"]["reason"] == "CrashLoopBackOff":
+                    ps["alertStatus"] = "Failure"
+                if ps["alertStatus"] != "Sent" and "waiting" in contStatus[0]["state"] and contStatus[0]["state"]["waiting"]["reason"] == "ImagePullBackOff":
+                    ps["alertStatus"] = "Failure"
 
                 ps["totalRestartCount"] = totalRestartCount
-                ps["lastUpdateTime"] =  datetime.now().strftime(self.dateTimeFormat)
-
+                ps["lastUpdateTime"] =  datetime.now().strftime(self.displayTimeFormat)
+                ps["state"] = contStatus[0]["state"]
+                ps["namespace"] = namespace
+                ps["podLongName"] = podFullName
                 self.logger.info("Total reset count:" + str(totalRestartCount))
-                self.logger.info("Recent Restart count:" + str(baseRestartCount))
+                self.logger.info("Recent Restart count:" + str(len(ps["restarts"])))
                                 
-                if ps["alertStatus"] != "Warn":
+                if "startTime" in status:
+                    dtStart = datetime.strptime(status["startTime"],self.dateTimeFormat)
+                    self.logger.info("START:" + str(dtStart))
+                    ps["startTime"] =  self.utc_to_local(dtStart,self.displayTimeFormat)
+
+                if ps["alertStatus"] != "Warning" and ps["alertStatus"] != "Failure":
                     ps["restarts"] = self.remove_old_restarts(ps["restarts"])
                 ps["currentRestarts"] = len(ps["restarts"])
                 self.logger.debug("Current reset count:" + str(ps["currentRestarts"]))
+
                 if len(ps["restarts"]) >= self.threshold:
                     self.logger.warn("Theshold exceeded:" + str(self.threshold)) 
-                    ps["alertStatus"] = "Warn"
+                    ps["alertStatus"] = "Warning"
                 podStatus[ps["podName"]] = ps
-                self.save_status(podStatus)
+
+                self.save_status(podStatus, namespace)
 
         else:
             self.logger.warn("Status is not type Dictionary!")
