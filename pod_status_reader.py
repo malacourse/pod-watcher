@@ -87,7 +87,7 @@ class PodStatusReader():
            self.logger.info("URL:" + url)
            self.logger.info("Header:" + str(headers))
            retStatus = requests.get(url, headers=headers, verify=False)
-           nsPods = json.loads(retStatus.content)
+           nsPods = json.loads(str(retStatus.content))
            self.logger.info("PODS:" + str(nsPods))
            if podname != "None":
              for pod in nsPods["items"]:
@@ -116,10 +116,11 @@ class PodStatusReader():
            self.logger.info("GET EVENTS URL:" + url)
            retStatus = requests.get(url, headers=headers, verify=False)
            self.logger.info("EVENTS TYPE:" + str(type(retStatus.content)))
-           if isinstance(retStatus.content,bytearray):
+           if isinstance(retStatus.content,bytes):
+              self.logger.info("Ret Type is Bytes")
               strEvents = retStatus.content.decode("utf-8")
            else:
-              strEvents = retStatus.content
+              strEvents = str(retStatus.content)
            nsEvents = json.loads(strEvents)
            self.logger.info("EVEN NS:" + str(nsEvents))
            for item in nsEvents["items"]:
