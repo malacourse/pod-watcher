@@ -115,7 +115,10 @@ class PodStatusReader():
            headers = {"Authorization" : "Bearer " + self.osToken}
            self.logger.debug("URL:" + url)
            retStatus = requests.get(url, headers=headers, verify=False)
+           self.logger.info("EVENTS RET:" + str(retStatus.content))
+           self.logger.info("EVENTS TYPE:" + str(type(retStatus.content)))
            nsEvents = json.loads(retStatus.content)
+           self.logger.info("EVEN NS:" + str(nsEvents))
            for item in nsEvents["items"]:
                if podname == "None" or podname in str(item):
                   lastTime = item["lastTimestamp"]
