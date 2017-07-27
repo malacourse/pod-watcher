@@ -6,7 +6,6 @@ This repository implements a python based opensfhit pod which will monitor pods 
 
 To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the Python S2I builder at the Git repository containing this code.
 
-
 ```
 Name:		pod-watcher
 Description:	Python service to monitor pod restarts and crashes
@@ -33,12 +32,23 @@ Parameters:
     Required:		true
     Default:		/var/tmp/
 
-As an example, to build and host a simple site with you only need run:
+As an example, to create a new pod monitor instance using the python s2i build image:
 
 ```
-oc new-app getwarped/s2i-httpd-server~https://github.com/getwarped/httpd-site-maintenance --name site-maintenance
+oc create sa podmonitorsa    
 
-oc expose svc/site-maintenance
-```
+-- Get token of the service account for configuring service or "use oc whoami -t" for a temporary token
+
+
+oc new-app openshift/python:3.4~https://github.com/malacourse/pod-watcher.git -e OPENSHIFT_HOST=192.168.99.100:8443 -e OPENSHIFT_NAMEPACE=test,jenkins -e OPENSHIFT_TOKEN=4AOesX1gKRZ4RQEty18KxuzvzN9OSDg3VtKRtmvCRgk --name pod-monitor
+                     
+                     
+oc expose svc/pod-monitor
+oc policy add-role-to-user view system:serviceaccount:test:podwatchersa -n test
+oc policy add-role-to-user view system:serviceaccount:test:podwatchersa -n jenkins
 
 ```
+```
+## Pod Watch Usage
+
+To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the Python S2I builder at the Git repository containing this code.
