@@ -1,10 +1,10 @@
 # Openshift Pod Watcher
 
-This repository implements a python based opensfhit pod which will monitor pods within namespaces and create events based on pod status and the number of restarts within a given threashold.   There is a status page at the root of the project displaying the current information and a rest endpoint which can be called to get current pod alerts.  Once the alerts are retrieved they are reset to normal state.
+This repository implements a python based opensfhit pod which will monitor pods within namespaces and create events based on pod status and the number of restarts within a given threashold.  Alerts will also be generated for "CrashLoopBackOff" Status and "ImagePullBackOff" status. There is a status page at the root of the project displaying the current information and a rest endpoint which can be called to get current pod alerts.  Once the alerts are retrieved they are reset to normal state.
 
 ## Pod Watcher Setup
 
-To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the Python S2I builder at the Git repository containing this code.  Has been tested on python version 3.4
+To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the Python S2I builder at the Git repository containing this code.  The code been tested on python version 3.4
 
 ```
 Name:		pod-watcher
@@ -52,7 +52,7 @@ As an example, to create a new pod monitor instance using the python s2i build i
 ```
 oc create sa podmonitorsa    
 
--- Get token of the service account for configuring service or "use oc whoami -t" for a temporary token
+-- Get token of the service account for configuring service access or use "oc whoami -t" for a temporary token
 
 
 oc new-app openshift/python:3.4~https://github.com/malacourse/pod-watcher.git -e OPENSHIFT_HOST=192.168.99.100:8443 -e OPENSHIFT_NAMEPACE=test,jenkins -e OPENSHIFT_TOKEN=4AOesX1gKRZ4RQEty18KxuzvzN9OSDg3VtKRtmvCRgk --name pod-monitor
@@ -66,5 +66,5 @@ oc policy add-role-to-user view system:serviceaccount:test:podwatchersa -n jenki
 ```
 ## Pod Watch Usage
 
-To pod status is displayed at the routes route path.  The service to get alerts is at the path "/pod-restart-alerts".  A json view of the status can be accessed at "/status".   The pod status is reset to normal after a call to the /pod-restart-alerts is made so a monitoring service will get repeated alerts.
+To pod status is displayed at the routes root path "/".  The path to get alerts is at "/pod-restart-alerts".  A json view of the status can be accessed at "/status".   The pod status is reset to normal after a call to the /pod-restart-alerts is made so a monitoring service will get repeated alerts.
 
