@@ -4,29 +4,34 @@ This repository implements a python based opensfhit pod which will monitor pods 
 
 ## Pod Watch Setup
 
-To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the S2I builder at the Git repository containing your static web site.
+To use this with OpenShift, it is a simple matter of creating a new application within OpenShift, pointing the Python S2I builder at the Git repository containing this code.
 
 
 ```
-Name:		httpd-server
-Description:	Apache HTTPD Server
-Annotations:	tags=instant-app,httpd
+Name:		pod-watcher
+Description:	Python service to monitor pod restarts and crashes
 
 Parameters:
-    Name:		APPLICATION_NAME
-    Description:	The name of the application.
+    Name:		OPENSHIFT_HOST
+    Description:	The host of the openshift API service.
     Required:		true
-    Value:		httpd-server
+    Default:        <none>
 
-    Name:		SOURCE_REPOSITORY
-    Description:	Git repository for source.
+    Name:		OPENSHIFT_NAMESPACE
+    Description:	A list of namespaces to monitor pod restarts
     Required:		true
-    Value:		<none>
+    Default:		<none>
     
-    Name:		SOURCE_DIRECTORY
-    Description:	Sub-directory of repository for source files.
-    Required:		false
-    Value:		<none>
+    Name:		OPENSHIFT_TOKEN
+    Description:	The openshift authentication token of the service account used to run the pod.  The service 
+                     must have the view role on the namespaces it is watching.
+    Required:		true
+    Default:		<none>
+
+    Name:		PODMONITOR_FILEPATH
+    Description:	The file path the pod uses to persist the current status.
+    Required:		true
+    Default:		/var/tmp/
 
 As an example, to build and host a simple site with you only need run:
 
