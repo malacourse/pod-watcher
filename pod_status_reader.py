@@ -10,11 +10,11 @@ from pytz import utc, timezone
 class PodStatusReader():
 
     def __init__(self,namespace="None"):
-        self.filePath = "/var/lib/podstatus/"
+        self.filePath = "/var/tmp/"
         self.namespace = namespace
         self.logger = logging.getLogger(__name__)
-        if "STATUSFILE" in os.environ:
-           self.filePath = os.environ["STATUSFILE"] 
+        if "PODMONITOR_FILEPATH" in os.environ:
+           self.filePath = os.environ["PODMONITOR_FILEPATH"] 
         self.osHost = "192.168.99.100:8443"
         self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHdhdGNoZXJzYS10b2tlbi03ZjNnMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJwb2R3YXRjaGVyc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJiMDg5YzRhYS02YjFlLTExZTctYjdiOC0wODAwMjdlYTczYzciLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6dGVzdDpwb2R3YXRjaGVyc2EifQ.N_bYQs-Pg_1xpDg2M66xI4TM5ag2AOVYipgUBPptT6Z3qbR0q3RPyJVyTVnAvSFBhg2_kUT4WGGKi6qXzCwRBfXo_Yu_WCL4P-dTlZ0dd0OBNh-kbgPnSfsi0_j9lRBHtm-NH7BB037SiKLuzDY6A0q3QoUnUhzJDgLp9h3ci33CaXwLPUdFFHXhL0xj5yfahLyInCJL1jCK1vgylpynhDqEoeO4keOmA7OhEN6s1cdN6dDbTvr8leky1AKuIQYWJY_ieskULgusfvR99sRSKIBFklLQ1UXdLsmVFOXTdvc3HeO04B0kHsQminasJEFJ-0-v81DZkPq-Mt1O7lfMRA"
         self.logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class PodStatusReader():
            url = "https://" + self.osHost + "/api/v1/namespaces/" + namespace + "/pods"
            headers = {"Authorization" : "Bearer " + self.osToken}
            self.logger.info("URL:" + url)
-           self.logger.info("Header:" + str(headers))
+           self.logger.debug("Header:" + str(headers))
            retStatus = requests.get(url, headers=headers, verify=False)
            if isinstance(retStatus.content,bytes):
               self.logger.info("Ret Type is Bytes")
@@ -94,7 +94,6 @@ class PodStatusReader():
               strPods = str(retStatus.content)
 
            nsPods = json.loads(strPods)
-           self.logger.info("PODS:" + str(nsPods))
            if podname != "None":
              for pod in nsPods["items"]:
                 if podname == pod["metadata"]["name"]:
