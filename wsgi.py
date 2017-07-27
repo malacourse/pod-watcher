@@ -10,9 +10,9 @@ monitor = PodMonitor().start()
 application = Flask(__name__)
 
 def get_current_config():
-    threshold = 3
-    configMinutes = 720
-    pageRefreshSeconds = 30
+    threshold = 5
+    configMinutes = 240
+    pageRefreshSeconds = 60
     config = {}
     if "OPENSHIFT_HOST" in os.environ:
         osHost = os.environ["OPENSHIFT_HOST"]
@@ -73,7 +73,7 @@ def status_service():
     
 @application.route("/pod-restart-alerts")
 def restart_alerts():
-    threshold = 3
+    threshold = 5
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
     namespaces = "test"

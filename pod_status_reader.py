@@ -30,8 +30,8 @@ class PodStatusReader():
         if "OPENSHIFT_TOKEN" in os.environ:
            self.osToken = os.environ["OPENSHIFT_TOKEN"]
         self.includeEvents = True
-        if "PM_INCLUDE_EVENTS" in os.environ:
-           self.includeEvents = os.environ["PM_INCLUDE_EVENTS"] == "True"
+        if "PODMONITOR_INCLUDE_EVENTS" in os.environ:
+           self.includeEvents = os.environ["PODMONITOR_INCLUDE_EVENTS"].lower() == "true"
  
 
     def get_status_for_ns(self, namespace):
