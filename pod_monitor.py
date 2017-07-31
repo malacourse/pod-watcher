@@ -30,7 +30,7 @@ class PodMonitor(object):
         
         if "KUBERNETES_SERVICE_PORT" in os.environ and "KUBERNETES_SERVICE_HOST" in os.environ:
             apiPort = os.environ["KUBERNETES_SERVICE_PORT"]
-            apiHost = os.envoron["KUBERNETES_SERVICE_HOST"]
+            apiHost = os.environ["KUBERNETES_SERVICE_HOST"]
             self.osHost = "https://" + apiHost + ":" + apiPort
 
         ## "2017-06-28T18:30:55Z"
