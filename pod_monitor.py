@@ -122,7 +122,8 @@ class PodMonitor(object):
         try:
             with open(self.secretPath + "/token", 'rb') as f:
                 retToken = f.read()
-                f.close()
+                if isinstance(retToken,bytes):
+                  retToken = retToken.decode("utf-8")
         except:
             self.logger.warn("No service account secret mounted!")
         self.logger.debug("Read Token:" + retToken)
