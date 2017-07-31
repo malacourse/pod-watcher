@@ -27,6 +27,12 @@ class PodMonitor(object):
         self.threshold = 5
         self.log_level = logging.INFO
         self.timeframe = timedelta(hours=4)
+        
+        if "KUBERNETES_SERVICE_PORT" in os.environ and "KUBERNETES_SERVICE_HOST" in os.environ:
+            apiPort = os.environ["KUBERNETES_SERVICE_PORT"]
+            apiHost = os.envoron["KUBERNETES_SERVICE_HOST"]
+            self.osHost = "https://" + apiHost + ":" + apiPort
+
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
         self.displayTimeFormat = "%m/%d/%Y-%H:%M:%S"
