@@ -23,8 +23,9 @@ Parameters:
     
     Name:		OPENSHIFT_TOKEN
     Description:	The openshift authentication token of the service account used to run the pod.  The service 
-                     must have the view role on the namespaces it is watching.
-    Required:		true
+                        must have the view role on the namespaces it is watching.  Used for testing.  A service account token secret 
+                        is used for normal deployments.
+    Required:		false
     Default:		<none>
 
     Name:		PODMONITOR_FILEPATH
@@ -55,7 +56,7 @@ oc create sa podmonitorsa
 -- Get token of the service account for configuring service access or use "oc whoami -t" for a temporary token
 
 
-oc new-app openshift/python:3.4~https://github.com/malacourse/pod-watcher.git -e OPENSHIFT_HOST=192.168.99.100:8443 -e OPENSHIFT_NAMEPACE=test,jenkins -e OPENSHIFT_TOKEN=4AOesX1gKRZ4RQEty18KxuzvzN9OSDg3VtKRtmvCRgk --name pod-monitor
+oc new-app openshift/python-rhel7:3.4~https://github.com/malacourse/pod-watcher.git -e OPENSHIFT_HOST=192.168.99.100:8443 -e OPENSHIFT_NAMESPACE=test,jenkins -e OPENSHIFT_TOKEN=4AOesX1gKRZ4RQEty18KxuzvzN9OSDg3VtKRtmvCRgk --name pod-monitor
                      
                      
 oc expose svc/pod-monitor
