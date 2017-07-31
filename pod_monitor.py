@@ -31,7 +31,7 @@ class PodMonitor(object):
         if "KUBERNETES_SERVICE_PORT" in os.environ and "KUBERNETES_SERVICE_HOST" in os.environ:
             apiPort = os.environ["KUBERNETES_SERVICE_PORT"]
             apiHost = os.environ["KUBERNETES_SERVICE_HOST"]
-            self.osHost = "https://" + apiHost + ":" + apiPort
+            self.osHost = "https://" + apiHost + ":8443"
 
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
