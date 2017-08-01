@@ -11,17 +11,22 @@ class PodStatusReader():
 
     def __init__(self,namespace="None"):
         self.filePath = "/var/tmp/"
+        self.secretPath = "/etc/secret"
         self.namespace = namespace
         self.logger = logging.getLogger(__name__)
         if "PODMONITOR_FILEPATH" in os.environ:
            self.filePath = os.environ["PODMONITOR_FILEPATH"] 
-        self.osHost = "192.168.99.100:8443"
-        self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHdhdGNoZXJzYS10b2tlbi03ZjNnMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJwb2R3YXRjaGVyc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJiMDg5YzRhYS02YjFlLTExZTctYjdiOC0wODAwMjdlYTczYzciLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6dGVzdDpwb2R3YXRjaGVyc2EifQ.N_bYQs-Pg_1xpDg2M66xI4TM5ag2AOVYipgUBPptT6Z3qbR0q3RPyJVyTVnAvSFBhg2_kUT4WGGKi6qXzCwRBfXo_Yu_WCL4P-dTlZ0dd0OBNh-kbgPnSfsi0_j9lRBHtm-NH7BB037SiKLuzDY6A0q3QoUnUhzJDgLp9h3ci33CaXwLPUdFFHXhL0xj5yfahLyInCJL1jCK1vgylpynhDqEoeO4keOmA7OhEN6s1cdN6dDbTvr8leky1AKuIQYWJY_ieskULgusfvR99sRSKIBFklLQ1UXdLsmVFOXTdvc3HeO04B0kHsQminasJEFJ-0-v81DZkPq-Mt1O7lfMRA"
+        self.osHost = ""
+        self.osToken = ""
         self.logger = logging.getLogger(__name__)
         self.log_level = logging.INFO
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
         self.displayTimeFormat = "%m/%d/%Y-%H:%M:%S"
+
+        token = self.load_token_from_secret()
+        if token != "":
+            self.osToken = token
 
         if "OPENSHIFT_HOST" in os.environ:
            self.osHost = os.environ["OPENSHIFT_HOST"]
@@ -33,6 +38,18 @@ class PodStatusReader():
         if "PODMONITOR_INCLUDE_EVENTS" in os.environ:
            self.includeEvents = os.environ["PODMONITOR_INCLUDE_EVENTS"].lower() == "true"
  
+    def load_token_from_secret(self):
+        retToken = ""
+        try:
+            with open(self.secretPath + "/token", 'rb') as f:
+                retToken = f.read()
+                if isinstance(retToken,bytes):
+                  retToken = retToken.decode("utf-8")
+        except:
+            self.logger.warn("No service account secret mounted!")
+        self.logger.debug("Read Token:" + retToken)
+        return retToken.rstrip()
+
 
     def get_status_for_ns(self, namespace):
         # load from file:
