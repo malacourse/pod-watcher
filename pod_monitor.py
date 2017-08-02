@@ -14,19 +14,21 @@ import ssl
 import traceback
 import websocket
 from datetime import datetime, timedelta
+import re
 
 class PodMonitor(object):
 
     def __init__(self):
         self.osHost = "192.168.99.100:8443"
         self.osNs = "test"
-        self.osToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ0ZXN0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InBvZHdhdGNoZXJzYS10b2tlbi03ZjNnMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJwb2R3YXRjaGVyc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJiMDg5YzRhYS02YjFlLTExZTctYjdiOC0wODAwMjdlYTczYzciLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6dGVzdDpwb2R3YXRjaGVyc2EifQ.N_bYQs-Pg_1xpDg2M66xI4TM5ag2AOVYipgUBPptT6Z3qbR0q3RPyJVyTVnAvSFBhg2_kUT4WGGKi6qXzCwRBfXo_Yu_WCL4P-dTlZ0dd0OBNh-kbgPnSfsi0_j9lRBHtm-NH7BB037SiKLuzDY6A0q3QoUnUhzJDgLp9h3ci33CaXwLPUdFFHXhL0xj5yfahLyInCJL1jCK1vgylpynhDqEoeO4keOmA7OhEN6s1cdN6dDbTvr8leky1AKuIQYWJY_ieskULgusfvR99sRSKIBFklLQ1UXdLsmVFOXTdvc3HeO04B0kHsQminasJEFJ-0-v81DZkPq-Mt1O7lfMRA"
+        self.osToken = ""
         self.secretPath = "/etc/secret"
         self.filePath = "/var/tmp/"
         self.logger = logging.getLogger(__name__)
         self.threshold = 5
         self.log_level = logging.INFO
         self.timeframe = timedelta(hours=4)
+        self.imageReExclude = "ose-"
         
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
@@ -100,7 +102,8 @@ class PodMonitor(object):
         today = datetime.now()
         self.logger.debug("DELTA:" + str(self.timeframe))
         for strTime in currentList:
-            rs_dt = datetime.strptime(strTime,self.dateTimeFormat)            
+            rs_dt = datetime.strptime(strTime,self.dateTimeFormat) 
+            self.logger.debug("Restart Time:" + str(rs_dt) + "Current Time:" + str(today) + ", Threshold:" + str(self.timeframe))           
             if rs_dt >= today - self.timeframe:
                newList.append(strTime)
         return newList
@@ -233,9 +236,6 @@ class PodMonitor(object):
                         restartTime = datetime.now().strftime(self.dateTimeFormat)
                         if "running" in contStatus[0]["state"]:
                             restartTime = contStatus[0]["state"]["running"]["startedAt"]
-                            utcTime = datetime.strptime(restartTime,self.dateTimeFormat)
-                            restartTime = self.utc_to_local(utcTime, self.dateTimeFormat)
-
                         if totalRestartCount > int(ps["totalRestartCount"]):
                            ps["restarts"].append(restartTime)
 

@@ -56,6 +56,7 @@ class PodStatusReader():
         try:
             with open(self.filePath + namespace, 'rb') as f:
                 data = pickle.load(f)
+                data = self.format_restart_times(data)
         except:
 	        data = []
         self.logger.debug("Data:" + str(data))
@@ -66,10 +67,24 @@ class PodStatusReader():
         try:
             with open(self.filePath + self.namespace, 'rb') as f:
                 data = pickle.load(f)
+                data = self.format_restart_times(data)
         except:
+                self.logger.error("%s", traceback.format_exc())
                 data = []
         self.logger.debug("Data:" + str(data))
         return data
+
+    def format_restart_times(self,pods):
+       for pod in pods:
+          formatedRestarts = []
+          restarts = pod["restarts"]
+          if len(restarts) > 0:
+             for strTime in restarts:
+                utcTime = datetime.strptime(strTime,self.dateTimeFormat)
+                localTime = self.utc_to_local(utcTime)
+                formatedRestarts.append(localTime)
+          pod["restartsLocal"] = formatedRestarts
+       return pods
 
     def save_status(self, ps, namespace):
         # save to file:
