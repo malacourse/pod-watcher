@@ -5,9 +5,11 @@ import os
 import sys
 import traceback
 import json
+from pod_utils import PodUtils
 
 monitor = PodMonitor().start()
 application = Flask(__name__)
+utils = PodUtils()
 
 def get_current_config():
     threshold = 5
@@ -31,7 +33,7 @@ def get_current_config():
     config["threshold"] = threshold
     return config
 
-def get_namespaces(namespaces):
+def get_namespaces_list(namespaces):
     ret = []
     if "," in namespaces:
        ret = namespaces.split(",")
@@ -44,17 +46,15 @@ def status_service():
     threshold = 3
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
-    namespaces = "test"
-    if "OPENSHIFT_NAMESPACE" in os.environ:
-        namespaces = os.environ["OPENSHIFT_NAMESPACE"]
+    namespaces = utils.get_namespaces()
 
-    nslist = get_namespaces(namespaces)
+    nslist = get_namespaces_list(namespaces)
     config = get_current_config()
     status = '{"status" : "None"}'
     try:
        nCount = 0
        for namespace in nslist:
-          items = PodStatusReader(namespace).get_status()
+          items = utils.get_status_list(namespace)
           if type(items) == list:
               if nCount == 0:
                  status = '{"config" :'  + json.dumps(config) + ',"namespaces" :['
@@ -76,11 +76,9 @@ def restart_alerts():
     threshold = 5
     if "RESTART_THRESHOLD" in os.environ:
            threshold = int(os.environ["RESTART_THRESHOLD"])
-    namespaces = "test"
-    if "OPENSHIFT_NAMESPACE" in os.environ:
-        namespaces = os.environ["OPENSHIFT_NAMESPACE"]
+    namespaces = utils.get_namespaces()
 
-    nslist = get_namespaces(namespaces)
+    nslist = get_namespaces_list(namespaces)
     status = '{"status" : "None"}'
     try:
        status = PodStatusReader().get_alerts(nslist)

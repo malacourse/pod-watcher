@@ -3,7 +3,6 @@
 import datetime
 import time
 import re
-from pytz import utc, timezone
 import sys
 import os
 import pickle
@@ -14,16 +13,16 @@ import ssl
 import traceback
 import websocket
 from datetime import datetime, timedelta
-import re
+import requests
+from pod_utils import PodUtils
 
 class PodMonitor(object):
 
     def __init__(self):
-        self.osHost = "192.168.99.100:8443"
-        self.osNs = "test"
-        self.osToken = ""
-        self.secretPath = "/etc/secret"
-        self.filePath = "/var/tmp/"
+        self.utils = PodUtils()
+        self.osHost = self.utils.get_host()
+        self.osNs = self.utils.get_namespaces()
+        self.osToken = self.utils.get_token()
         self.logger = logging.getLogger(__name__)
         self.threshold = 5
         self.log_level = logging.INFO
@@ -33,14 +32,6 @@ class PodMonitor(object):
         ## "2017-06-28T18:30:55Z"
         self.dateTimeFormat = "%Y-%m-%dT%H:%M:%SZ"
         self.displayTimeFormat = "%m/%d/%Y-%H:%M:%S"
-        if "OPENSHIFT_HOST" in os.environ:
-           self.osHost = os.environ["OPENSHIFT_HOST"]
-        if "OPENSHIFT_NAMESPACE" in os.environ:
-           self.osNs = os.environ["OPENSHIFT_NAMESPACE"]
-        if "OPENSHIFT_TOKEN" in os.environ:
-           self.osToken = os.environ["OPENSHIFT_TOKEN"]
-        if "PODMONITOR_FILEPATH" in os.environ:
-           self.filePath = os.environ["PODMONITOR_FILEPATH"]
         if "RESTART_THRESHOLD" in os.environ:
            self.threshold = int(os.environ["RESTART_THRESHOLD"])
         if "RESTART_TIMEFRAME" in os.environ:
@@ -71,12 +62,11 @@ class PodMonitor(object):
 
     def about(self):
        self.logger.info ("pod bot status module")
-      
 
     def runSocket(self,url,namespace):
         def run(url):
                 self.logger.info("Thread start: " + url)
-                self.save_status({},namespace)
+                self.utils.save_status({},namespace)
                 header = {"Authorization: Bearer " + self.osToken, "OSNS: " + namespace}
                 ws = websocket.WebSocketApp(url, header=header,on_message = self.on_message, on_error = self.on_error, on_close = self.on_close)
                 #ws.on_open = self.on_open
@@ -90,13 +80,6 @@ class PodMonitor(object):
         t.start()
         self.logger.info("Thread started!")
 
-    local_tz = timezone('America/New_York')
-    def utc_to_local(self, utc_dt, dtFormat):
-        self.logger.debug("UTC TIME:" + str(utc_dt))
-        local_dt = utc_dt.replace(tzinfo=utc).astimezone(self.local_tz)
-        self.logger.debug("UTC NEW TIME:" + str(local_dt))
-        return self.local_tz.normalize(local_dt).strftime(dtFormat)
-
     def remove_old_restarts(self, currentList):
         newList = []
         today = datetime.now()
@@ -108,30 +91,6 @@ class PodMonitor(object):
                newList.append(strTime)
         return newList
  
-    def save_status(self,podStatus,namespace):
-        # save to file:
-        podList = []
-        try:
-            for key, ps in podStatus.items():
-               podList.append(ps)
-        
-            with open(self.filePath + namespace, 'wb') as f:
-                pickle.dump(podList, f)
-                f.close()
-        except:
-            self.logger.error("Error Saving Status")
-
-    def load_token_from_secret(self):
-        retToken = ""
-        try:
-            with open(self.secretPath + "/token", 'rb') as f:
-                retToken = f.read()
-                if isinstance(retToken,bytes):
-                  retToken = retToken.decode("utf-8")
-        except:
-            self.logger.warn("No service account secret mounted!")
-        self.logger.debug("Read Token:" + retToken)
-        return retToken.rstrip()
 
     def start(self):
         result = "Error"
@@ -140,12 +99,6 @@ class PodMonitor(object):
             log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 
             logging.basicConfig(format=log_fmt, level=self.log_level)
-
-            token = self.load_token_from_secret()
-            if token != "":
-                self.osToken = token
-            
-
             # Banner
             self.logger.info("==========================================================")
             self.logger.info( "Starting Pod Bot")
@@ -177,23 +130,6 @@ class PodMonitor(object):
         except:
             logging.critical("Terminating due to unexpected error: %s", sys.exc_info()[0])
             logging.critical("%s", traceback.format_exc())
- 
-    def get_status(self,namespace):
-        # load from file:
-        data = {}
-        try:
-            with open(self.filePath + namespace, 'rb') as f:
-                saveddata = pickle.load(f)
-                if type(saveddata) == list:
-                    for ps in saveddata:
-                        data[ps["podName"]] = ps   
-        except:
-            self.logger.warn("Status file empty!")
-            data = {}
-
-        self.logger.debug("Loaded data:" + str(data))
-        return data
-
 
     def parse_json(self, json, namespace):
         self.logger.debug("json:" + str(json))
@@ -210,7 +146,7 @@ class PodMonitor(object):
                 self.logger.info("contStatus:" + str(contStatus[0]) + ", TYPE:" + msgType)
                 self.logger.debug("Msg:" + str(json))
                 ps = {}
-                podStatus = self.get_status(namespace)
+                podStatus = self.utils.get_status(namespace)
                 
                 totalRestartCount = int(contStatus[0]["restartCount"])
                 podName = contStatus[0]["name"]
@@ -230,7 +166,7 @@ class PodMonitor(object):
                     if msgType == "DELETED":
                       if podName in podStatus:
                          del podStatus[podName]
-                         self.save_status(podStatus, namespace)
+                         self.utils.save_status(podStatus, namespace)
                       return
                     else:
                         restartTime = datetime.now().strftime(self.dateTimeFormat)
@@ -256,7 +192,7 @@ class PodMonitor(object):
                 if "startTime" in status:
                     dtStart = datetime.strptime(status["startTime"],self.dateTimeFormat)
                     self.logger.info("START:" + str(dtStart))
-                    ps["startTime"] =  self.utc_to_local(dtStart,self.displayTimeFormat)
+                    ps["startTime"] =  self.utils.utc_to_local(dtStart,self.displayTimeFormat)
 
                 if ps["alertStatus"] != "Warning" and ps["alertStatus"] != "Failure":
                     ps["restarts"] = self.remove_old_restarts(ps["restarts"])
@@ -268,7 +204,7 @@ class PodMonitor(object):
                     ps["alertStatus"] = "Warning"
                 podStatus[ps["podName"]] = ps
 
-                self.save_status(podStatus, namespace)
+                self.utils.save_status(podStatus, namespace)
 
         else:
             self.logger.warn("Status is not type Dictionary!")
